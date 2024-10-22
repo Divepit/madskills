@@ -8,3 +8,6 @@ saved_models
 *logs
 *.pkl
 *.egg-info
+*dataset*
+*.keras
+*.h5

@@ -1,12 +1,12 @@
 from planning_sandbox.environment_class import Environment
 from planning_sandbox.visualizer_class import Visualizer
 
-num_agents = 3
-num_goals = 6
-num_skills = 2
-size = 100
+num_agents = 1
+num_goals = 3
+num_skills = 1
+size = 32
 visualisation_speed = 100 # Max 200
-solve_type = 'linalg' # 'optimal' or 'fast'
+solve_type = 'optimal' # 'optimal' or 'fast'
 use_map = False
 
 my_environment = Environment(size=size, num_agents=num_agents, num_goals=num_goals, num_skills=num_skills, use_geo_data=use_map)
@@ -14,6 +14,8 @@ my_visualiser = Visualizer(my_environment, speed=visualisation_speed)
 
 my_environment.find_numerical_solution(solve_type=solve_type)
 my_solution = my_environment.full_solution
+
+print(my_environment.get_sequential_action_vectors())
 
 total_steps, steps_waited, total_cost, solve_time, amount_of_claimed_goals = my_environment.solve_full_solution()
 

@@ -9,8 +9,8 @@ current_directory = os.path.dirname(os.path.abspath(__file__))
 num_agents = 3
 num_goals = 5
 num_skills = 2
-size = 100
-use_geo_data = True
+size = 32
+use_geo_data = False
 
 num_samples = 1000000  # Number of samples to generate in this run
 
@@ -47,7 +47,7 @@ def generate_output(env: Environment):
     return np.array(env.get_action_vector())
 
 # File to store data
-data_filename = current_directory+'/dataset.h5'
+data_filename = current_directory+'/dataset_medium_3a_5g.h5'
 
 # Open HDF5 file in append mode
 with h5py.File(data_filename, 'a') as h5f:

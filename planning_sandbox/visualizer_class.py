@@ -1,3 +1,4 @@
+
 import pygame
 import logging
 import numpy as np
@@ -7,6 +8,7 @@ from planning_sandbox.environment_class import Environment
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+
 
 BACKGROUND = (240, 240, 240)
 GRID_LINE = (100, 100, 100)
@@ -25,6 +27,7 @@ class Visualizer:
         self.setup_pygame()
 
     def setup_pygame(self):
+        logging.debug("Setting up pygame")
         pygame.init()
         self.cell_size: int = int(1000/self.env.size)
         self.size = self.env.size * self.cell_size
@@ -47,6 +50,7 @@ class Visualizer:
 
     # Function for coloration and 3D map created by ChatGPT (https://chatgpt.com/share/66f66db2-2750-8008-a104-700c5c92cfa9)
     def update_elevation_surface(self):
+        logging.debug("Updating elevation surface")
         elevations = self.env.grid_map.downscaled_data
 
         # Normalize elevations between 0 and 1 for colormap
@@ -178,7 +182,9 @@ class Visualizer:
     def visualise_full_solution(self, max_iterations = None, fast=False):
         if fast:
             logging.debug("Visualising fast solution")
-            
+        else:
+            logging.debug("Visualising regular solution")    
+        
         self.env.soft_reset()
         self.setup_pygame()
         
@@ -193,5 +199,5 @@ class Visualizer:
         if not not_deadlocked:
             logging.warning("Terminated visualisation due to deadlock")
             time.sleep(1)
-        self.close()
+        # self.close()
     
