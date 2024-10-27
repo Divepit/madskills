@@ -9,16 +9,16 @@ from planning_sandbox.visualizer_class import Visualizer
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-@keras.saving.register_keras_serializable()
-def custom_mae_with_rounded_zero_penalty(y_true, y_pred):
-    mae_loss = tf.reduce_mean(tf.abs(y_true - y_pred))
-    rounded_pred = tf.round(y_pred)
-    rounded_zero_mask = tf.cast(tf.equal(rounded_pred, 0), tf.float32)
-    non_zero_true_mask = tf.cast(tf.not_equal(y_true, 0), tf.float32)
-    penalty_mask = rounded_zero_mask * non_zero_true_mask
-    penalty = tf.reduce_sum(penalty_mask)
-    loss = mae_loss + 0.5 * penalty
-    return loss
+# @keras.saving.register_keras_serializable()
+# def custom_mae_with_rounded_zero_penalty(y_true, y_pred):
+#     mae_loss = tf.reduce_mean(tf.abs(y_true - y_pred))
+#     rounded_pred = tf.round(y_pred)
+#     rounded_zero_mask = tf.cast(tf.equal(rounded_pred, 0), tf.float32)
+#     non_zero_true_mask = tf.cast(tf.not_equal(y_true, 0), tf.float32)
+#     penalty_mask = rounded_zero_mask * non_zero_true_mask
+#     penalty = tf.reduce_sum(penalty_mask)
+#     loss = mae_loss + 0.5 * penalty
+#     return loss
 
 @keras.saving.register_keras_serializable()
 def rounded_accuracy(y_true, y_pred):
@@ -39,12 +39,13 @@ model = keras.models.load_model(current_directory+'/models/ok_3a_5g_2sk_100x100_
 num_agents = 3
 num_goals = 5
 num_skills = 2
-size = 200
+size = 100
 use_geo_data = True
 
 # Create environment (needed for input generation and visualization)
 env = Environment(size=size, num_agents=num_agents, num_goals=num_goals,
                   num_skills=num_skills, use_geo_data=use_geo_data)
+vis = Visualizer(env)
 
 
 def generate_input(env: Environment):
@@ -66,39 +67,16 @@ def generate_input(env: Environment):
     return observation_vector
 
 
-runs = 100
-successes = []
-optimal_costs = []
-predicted_costs = []
-optimal_times = []
-predicted_times = []
 
-for _ in range(runs):
+while True:
     env.reset()
     input_array = generate_input(env)
-    # print("Input Array:", input_array)
     input_array = input_array.reshape(1, -1)
-
-    opt_start = time.perf_counter_ns()
-    optimal_solution, opt_cost = env.find_numerical_solution(solve_type='optimal')
-    opt_end = time.perf_counter_ns()
-
-    # opt_cost = env.solve_full_solution(fast=True)[2]
-
     env.soft_reset()
-
-    # output_array = model.predict(input_array)
-    # print("Output Array:", output_array)
-    # Assume 'predictions' is a list of arrays, one for each agent, returned by model.predict()
-    pred_start = time.perf_counter_ns()
     predictions = model.predict(input_array)  # X_test is your test dataset inputs
-    pred_end = time.perf_counter_ns()
     predictions = tf.math.round(predictions[0])
     predictions = predictions.numpy().astype(int)
-
-
     full_solution = env.get_full_solution_from_action_vector(predictions)
-    pred_cost = env.calculate_cost_of_closed_solution(full_solution)
 
     
 
@@ -121,51 +99,7 @@ for _ in range(runs):
     #     solution[agent] = goal_list
 
     env.full_solution = full_solution
-    # vis.visualise_full_solution()
     env.solve_full_solution(fast=True)
     
     if not env.deadlocked:
-        successes.append(1)
-        optimal_costs.append(opt_cost)
-        predicted_costs.append(pred_cost)
-        optimal_times.append((opt_end - opt_start) / 1e6)
-        predicted_times.append((pred_end - pred_start) / 1e6)
-        print(" ====== RESULTS ====== ")
-        print(f"Optimal Cost: {opt_cost}")
-        print(f"Predicted Cost: {pred_cost}")
-        print(f"Optimal Time: {(opt_end - opt_start) / 1e6} ms")
-        print(f"Predicted Time: {(pred_end - pred_start) / 1e6} ms")
-        print(" ===================== ")
-    else:
-        successes.append(0)
-        print(" ====== RESULTS ====== ")
-        print("Deadlocked")
-        print(" ===================== ")
-
-    # predicted_output_int = np.rint(output_array).astype(int)
-
-    # print('Predicted Integer Output:', predicted_output_int)
-
-print(f"Success Rate: {sum(successes)/len(successes)}")
-
-# compare costs of optimal and predicted solutions
-optimal_costs = np.array(optimal_costs)
-predicted_costs = np.array(predicted_costs)
-cost_diff = predicted_costs - optimal_costs
-
-optimal_times = np.array(optimal_times)
-predicted_times = np.array(predicted_times)
-
-print(f"Mean Optimal Cost: {np.mean(optimal_costs)}")
-print(f"Mean Predicted Cost: {np.mean(predicted_costs)}")
-print(f"Mean Optimal Time: {np.mean(optimal_times)} ms")
-print(f"Mean Predicted Time: {np.mean(predicted_times)} ms")
-
-
-print(f"Mean Cost Difference: {np.mean(cost_diff)}")
-print(f"Max Cost Difference: {np.max(cost_diff)}")
-print(f"Min Cost Difference: {np.min(cost_diff)}")
-print(f"Cost Difference Standard Deviation: {np.std(cost_diff)}")
-print(f"Cost Difference Variance: {np.var(cost_diff)}")
-print(f"Cost Difference Median: {np.median(cost_diff)}")
-
+        vis.visualise_full_solution()
