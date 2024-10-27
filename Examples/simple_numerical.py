@@ -11,14 +11,17 @@ visualisation_speed = 20 # Max 200
 solve_type = 'optimal' # 'optimal' or 'fast'
 use_map = False
 
-agent_1 = Agent(initial_position=(0, 0), skills=[0])
-agent_2 = Agent(initial_position=(31, 31), skills=[1])
-goal_1 = Goal(position=(30, 1), skills=[0])
-goal_2 = Goal(position=(1, 30), skills=[0])
-goal_3 = Goal(position=(15, 15), skills=[0,1])
+custom_agents = []
+custom_goals = []
+
+custom_agents.append(Agent(initial_position=(0, 0), skills=[0]))
+custom_agents.append(Agent(initial_position=(31, 31), skills=[1]))
+custom_goals.append(Goal(position=(30, 1), skills=[0]))
+custom_goals.append(Goal(position=(1, 30), skills=[0]))
+custom_goals.append(Goal(position=(15, 15), skills=[0,1]))
 
 
-my_environment = Environment(size=size, num_agents=num_agents, num_goals=num_goals, num_skills=num_skills, use_geo_data=use_map, custom_agents=[agent_1, agent_2], custom_goals=[goal_1, goal_2, goal_3])
+my_environment = Environment(size=size, num_agents=num_agents, num_goals=num_goals, num_skills=num_skills, use_geo_data=use_map, custom_agents=custom_agents, custom_goals=custom_goals)
 my_visualiser = Visualizer(my_environment, speed=visualisation_speed)
 
 my_environment.find_numerical_solution(solve_type=solve_type)
