@@ -12,9 +12,7 @@ from planning_sandbox.benchmark_class import Benchmark
 import numpy as np
 
 class Environment:
-    def __init__(self, size, num_agents, num_goals, num_skills, use_geo_data=True, solve_type="optimal",replan_on_goal_claim=False, custom_agents: List[Agent] = None, custom_goals: List[Goal] = None):
-        assert (custom_agents is None) or (num_agents == len(custom_agents)), "Number of agents does not match custom_agents"
-        assert (custom_goals is None) or (num_goals == len(custom_goals)), "Number of goals does not match custom_goals"
+    def __init__(self, size, num_skills, num_agents = 1, num_goals = 1, use_geo_data=True, solve_type="optimal",replan_on_goal_claim=False, custom_agents: List[Agent] = None, custom_goals: List[Goal] = None):
 
         self.size = size
         self.map_diagonal = np.sqrt(2 * (size ** 2))
@@ -32,8 +30,8 @@ class Environment:
         self.full_solution = {}
         
 
-        self._initial_num_agents = num_agents
-        self._initial_num_goals = num_goals
+        self._initial_num_agents = num_agents if self.custom_agents is None else len(self.custom_agents)
+        self._initial_num_goals = num_goals if self.custom_goals is None else len(self.custom_goals)
         
         self.grid_map = GridMap(self.size, use_geo_data=use_geo_data)
         self._starting_position = self.grid_map.random_valid_position()
