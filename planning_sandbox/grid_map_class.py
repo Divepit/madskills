@@ -139,6 +139,9 @@ class GridMap:
             for j in range(width):
                 node = (i, j)
                 node_elevation = data[i, j]
+                G.nodes[node]["elevation"] = node_elevation
+                G.nodes[node]["x"] = i
+                G.nodes[node]["y"] = j
                 neighbors = [(i-1, j), (i+1, j), (i, j-1), (i, j+1)]
                 for ni, nj in neighbors:
                     if 0 <= ni < height and 0 <= nj < width:

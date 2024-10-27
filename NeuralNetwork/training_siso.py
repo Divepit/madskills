@@ -5,8 +5,6 @@ import tensorflow as tf
 from matplotlib import pyplot as plt
 from datetime import datetime
 
-from planning_sandbox.environment_class import Environment
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 current_directory = os.path.dirname(os.path.abspath(__file__))
 dataset_path = current_directory + '/dataset_3a_5g_2sk_100x100_map.h5'
@@ -15,7 +13,7 @@ with h5py.File(dataset_path, 'r') as h5f:
     X = h5f['X'][:]
     y = h5f['y'][:]
 
-nodes = 2048
+nodes = 1024
 slope = 0.1
 dropout = 0.1
 
@@ -23,7 +21,7 @@ model = keras.Sequential(
     [
         keras.Input(shape=(X[0].shape)),
         keras.layers.Dense(nodes),
-        keras.layers.LeakyReLU(slope),  # Applying LeakyReLU with a small negative slope (alpha)
+        keras.layers.LeakyReLU(slope), 
         keras.layers.Dense(nodes),
         keras.layers.LeakyReLU(slope),
         keras.layers.Dropout(dropout),
