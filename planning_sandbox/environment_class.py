@@ -12,7 +12,10 @@ from planning_sandbox.benchmark_class import Benchmark
 import numpy as np
 
 class Environment:
-    def __init__(self, size, num_agents, num_goals, num_skills, use_geo_data=True, solve_type="optimal",replan_on_goal_claim=False):
+    def __init__(self, size, num_agents, num_goals, num_skills, use_geo_data=True, solve_type="optimal",replan_on_goal_claim=False, custom_agents: List[Agent] = None, custom_goals: List[Goal] = None):
+        assert (custom_agents is None) or (num_agents == len(custom_agents)), "Number of agents does not match custom_agents"
+        assert (custom_goals is None) or (num_goals == len(custom_goals)), "Number of goals does not match custom_goals"
+
         self.size = size
         self.map_diagonal = np.sqrt(2 * (size ** 2))
         self.solve_type = solve_type
@@ -20,8 +23,10 @@ class Environment:
         self.replan_on_goal_claim = replan_on_goal_claim
         self.deadlocked = False
 
-        self.goals: List[Goal] = []
-        self.agents: List[Agent] = []
+        self.custom_goals = custom_goals
+        self.custom_agents = custom_agents
+        self.goals: List[Goal] = [] if self.custom_goals is None else self.custom_goals
+        self.agents: List[Agent] = [] if self.custom_agents is None else self.custom_agents
         self.scheduler = Scheduler(agents=self.agents, goals=self.goals)
         self.full_solution = {}
         
@@ -40,10 +45,12 @@ class Environment:
 
     def _init(self):
         assert not self.initialised, "Environment already initialised"
-        self._initialize_goals()
-        self._initialize_agents()
+        if self.custom_goals is None:
+            self._initialize_goals()
+        if self.custom_agents is None:
+            self._initialize_agents()
 
-        while not self._all_skills_represented():
+        while not self._all_skills_represented() and not (self.custom_agents is not None and self.custom_goals is not None):
             self._reset_skills()
             self._initialize_skills()
         
@@ -89,36 +96,40 @@ class Environment:
 
     def _initialize_skills(self):
         if self.num_skills == 1:
-            for goal in self.goals:
-                if goal.required_skills == []:
-                    goal.required_skills.append(0)
-            for agent in self.agents:
-                if agent.skills == []:
-                    agent.skills.append(0)
+            if self.custom_goals is None:
+                for goal in self.goals:
+                    if goal.required_skills == []:
+                        goal.required_skills.append(0)
+            if self.custom_agents is None:
+                for agent in self.agents:
+                    if agent.skills == []:
+                        agent.skills.append(0)
             return
 
-        for goal in self.goals:
-            amount_of_skills = np.random.randint(1, min(3,self.num_skills+1))
-            skills = []
-            for _ in range(amount_of_skills):
-                skill = np.random.randint(0, self.num_skills)
-                while skill in skills:
+        if self.custom_goals is None:
+            for goal in self.goals:
+                amount_of_skills = np.random.randint(1, min(3,self.num_skills+1))
+                skills = []
+                for _ in range(amount_of_skills):
                     skill = np.random.randint(0, self.num_skills)
-                skills.append(skill)
-            goal.required_skills = skills
+                    while skill in skills:
+                        skill = np.random.randint(0, self.num_skills)
+                    skills.append(skill)
+                goal.required_skills = skills
                 
-        for agent in self.agents:
-            if self.num_skills == 2:
-                amount_of_skills = 1
-            else:
-                amount_of_skills = np.random.randint(1, max(1,min(3,self.num_skills)))
-            skills = []
-            for _ in range(amount_of_skills):
-                skill = np.random.randint(0, self.num_skills)
-                while skill in skills:
+        if self.custom_agents is None:
+            for agent in self.agents:
+                if self.num_skills == 2:
+                    amount_of_skills = 1
+                else:
+                    amount_of_skills = np.random.randint(1, max(1,min(3,self.num_skills)))
+                skills = []
+                for _ in range(amount_of_skills):
                     skill = np.random.randint(0, self.num_skills)
-                skills.append(skill)
-            agent.skills = skills
+                    while skill in skills:
+                        skill = np.random.randint(0, self.num_skills)
+                    skills.append(skill)
+                agent.skills = skills
 
     def _all_skills_represented(self):
         all_skills = [0]*self.num_skills
@@ -336,16 +347,19 @@ class Environment:
         action_vector = action_vector
         for flat_index, selected_goal in enumerate(action_vector):
             if selected_goal-1 != -1:  # Only process if action is valid
-                # Compute agent and goal indices from flat_index
-                agent_index = flat_index // len(self.goals)
-                
-                agent = self.agents[agent_index]
-                goal = self.goals[selected_goal-1]
+                try:
+                    # Compute agent and goal indices from flat_index
+                    agent_index = flat_index // len(self.goals)
+                    
+                    agent = self.agents[agent_index]
+                    goal = self.goals[selected_goal-1]
 
-                # Add goal to the agent's full solution
-                if agent not in full_solution:
-                    full_solution[agent] = []
-                full_solution[agent].append(goal)
+                    # Add goal to the agent's full solution
+                    if agent not in full_solution:
+                        full_solution[agent] = []
+                    full_solution[agent].append(goal)
+                except IndexError:
+                    logging.error(f"IndexError: flat_index={flat_index}, selected_goal={selected_goal}")
         return full_solution
 
 
