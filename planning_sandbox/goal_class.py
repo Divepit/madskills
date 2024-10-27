@@ -6,10 +6,10 @@ from itertools import combinations
 from planning_sandbox.agent_class import Agent
 
 class Goal:
-    def __init__(self, position):
+    def __init__(self, position, skills=None):
         self.position = position
         self.initial_position = position
-        self.required_skills = []
+        self.required_skills = [] if skills is None else skills
         self.claimed = False
         self.agents_which_have_required_skills: List[Agent] = []
         self.agent_combinations_which_solve_goal: Dict[Tuple[Agent], np.float32] = {}

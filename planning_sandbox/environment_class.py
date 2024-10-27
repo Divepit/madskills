@@ -27,6 +27,7 @@ class Environment:
         self.custom_agents = custom_agents
         self.goals: List[Goal] = [] if self.custom_goals is None else self.custom_goals
         self.agents: List[Agent] = [] if self.custom_agents is None else self.custom_agents
+        self.new_goal_added = False if self.custom_goals is None else True
         self.scheduler = Scheduler(agents=self.agents, goals=self.goals)
         self.full_solution = {}
         
