@@ -40,7 +40,7 @@ model = keras.models.load_model(current_directory+'/models/good_3a_5g_2sk_100x10
 num_agents = 3
 num_goals = 5
 num_skills = 2
-size = 32
+size = 100
 use_geo_data = True
 
 # Create environment (needed for input generation and visualization)
@@ -72,40 +72,26 @@ def generate_input(env: Environment):
 while True:
     env.reset()
     solved = False
+    pred_time = 0
+
     while not solved:
         input_array = generate_input(env)
         input_array = input_array.reshape(1, -1)
+        pred_start = time.perf_counter_ns()
         predictions = model.predict(input_array)  # X_test is your test dataset inputs
+        pred_time += time.perf_counter_ns() - pred_start
         predictions = tf.math.round(predictions[0])
         predictions = predictions.numpy().astype(int)
         full_solution = env.get_full_solution_from_action_vector(predictions)
 
         
-
-        # print(f"PREDICTIONS: {predictions}")
-
-        # # For each agent, get the predicted goal indices
-        # agent_predictions_list = []
-        # for agent in range(num_agents):
-        #     # predictions[agent] has shape (num_samples, time_steps, num_goals)
-        #     agent_probs = predictions[agent]
-        #     # Apply argmax to get predicted goal indices
-        #     agent_preds = np.argmax(agent_probs, axis=-1)  # Shape: (num_samples, time_steps)
-        #     agent_predictions_list.append(agent_preds)
-
-        # print(agent_predictions_list)
-
-        # solution = {}
-        # for agent_index, agent in enumerate(env.agents):
-        #     goal_list = [env.goals[goal_index-1] for goal_index in agent_predictions_list[agent_index][0] if goal_index != 0]
-        #     solution[agent] = goal_list
         print(predictions)
         env.full_solution = full_solution
-        # env.solve_full_solution(fast=True, soft_reset=False)
         vis.visualise_full_solution(soft_reset=False, fast=False)
         
-        if not env.deadlocked:
+        if env.scheduler.all_goals_claimed():
             solved = True
+            print(f"Time taken: {pred_time/1e6} ms")
         else:   
             random.shuffle(env.agents)
             random.shuffle(env.goals)
