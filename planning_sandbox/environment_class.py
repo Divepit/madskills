@@ -260,9 +260,11 @@ class Environment:
         not_deadlocked = self.update(fast=fast)
         return not_deadlocked
 
-    def solve_full_solution(self, fast=False):
-        
-        self.soft_reset()
+    def solve_full_solution(self, fast=False, soft_reset=True):
+        if soft_reset:
+            self.soft_reset()
+        else:
+            self.deadlocked = False
         
         solving_bench: Benchmark = Benchmark("solve_full_solution", start_now=True, silent=True)
         while not (self.deadlocked or self.scheduler.all_goals_claimed()):
@@ -363,7 +365,7 @@ class Environment:
         full_solution = {}
         action_vector = action_vector
         for flat_index, selected_goal in enumerate(action_vector):
-            if selected_goal-1 != -1:  # Only process if action is valid
+            if selected_goal-1 > -1:  # Only process if action is valid
                 # Compute agent and goal indices from flat_index
                 agent_index = flat_index // len(self.goals)
                 

@@ -3,11 +3,8 @@ saved_models
 *pycache*
 *.DS_Store
 *plots
-*models
-*datasets
 *logs
 *.pkl
 *.egg-info
-*dataset*
-*.keras
 *.h5
+*.png

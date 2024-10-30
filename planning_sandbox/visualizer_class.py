@@ -23,10 +23,12 @@ CELL_SIZE = 5
 class Visualizer:
     def __init__(self, env: Environment, speed=200):
         self.env = env
+        self.ready = False
         self.speed = speed
         self.setup_pygame()
 
     def setup_pygame(self):
+        self.ready = True
         logging.debug("Setting up pygame")
         pygame.init()
         self.cell_size: int = int(1000/self.env.size)
@@ -177,16 +179,18 @@ class Visualizer:
         clock.tick(self.speed)
 
     def close(self):
+        self.ready = False
         pygame.quit()
 
-    def visualise_full_solution(self, max_iterations = None, fast=False):
+    def visualise_full_solution(self, max_iterations = None, fast=False, soft_reset=True):
         if fast:
             logging.debug("Visualising fast solution")
         else:
             logging.debug("Visualising regular solution")    
-        
-        self.env.soft_reset()
-        self.setup_pygame()
+        if soft_reset:
+            self.env.soft_reset()
+        if not self.ready:
+            self.setup_pygame()
         
         if max_iterations is None:
             max_iterations = self.size**2

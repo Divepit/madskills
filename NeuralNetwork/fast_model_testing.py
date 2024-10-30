@@ -4,6 +4,7 @@ import time
 import keras
 import numpy as np
 import logging
+import random
 from planning_sandbox.environment_class import Environment
 from planning_sandbox.visualizer_class import Visualizer
 
@@ -32,20 +33,20 @@ def rounded_accuracy(y_true, y_pred):
     return tf.reduce_mean(correct_predictions)
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
-model = keras.models.load_model(current_directory+'/models/ok_3a_5g_2sk_100x100_5min.keras')
+model = keras.models.load_model(current_directory+'/models/good_3a_5g_2sk_100x100_27min.keras')
 # model = keras.models.load_model(current_directory+'/model.keras')
 
 # Parameters (should match data generation parameters)
 num_agents = 3
 num_goals = 5
 num_skills = 2
-size = 100
+size = 32
 use_geo_data = True
 
 # Create environment (needed for input generation and visualization)
 env = Environment(size=size, num_agents=num_agents, num_goals=num_goals,
                   num_skills=num_skills, use_geo_data=use_geo_data)
-vis = Visualizer(env)
+vis = Visualizer(env, speed=50)
 
 
 def generate_input(env: Environment):
@@ -98,10 +99,15 @@ while True:
         # for agent_index, agent in enumerate(env.agents):
         #     goal_list = [env.goals[goal_index-1] for goal_index in agent_predictions_list[agent_index][0] if goal_index != 0]
         #     solution[agent] = goal_list
-
+        print(predictions)
         env.full_solution = full_solution
-        env.solve_full_solution(fast=True)
+        # env.solve_full_solution(fast=True, soft_reset=False)
+        vis.visualise_full_solution(soft_reset=False, fast=False)
         
         if not env.deadlocked:
             solved = True
-            vis.visualise_full_solution()
+        else:   
+            random.shuffle(env.agents)
+            random.shuffle(env.goals)
+            print("Deadlocked, resetting")
+            print("Old prediction: ", predictions)
