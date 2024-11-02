@@ -49,7 +49,7 @@ class Environment:
         if self.custom_agents is None:
             self._initialize_agents()
 
-        while not self._all_skills_represented() and not (self.custom_agents is not None and self.custom_goals is not None):
+        while self.custom_agents is None and self.custom_goals is None and not self._all_skills_represented():
             self._reset_skills()
             self._initialize_skills()
         
@@ -149,9 +149,6 @@ class Environment:
     def connect_agents_and_goals(self):
         inform_goals_of_agents_bench = Benchmark("inform_goals_of_agents", start_now=True, silent=True)
         for goal in self.scheduler.unclaimed_goals:
-            # goal.agents_which_have_required_skills.clear()
-            # goal.agent_combinations_which_solve_goal.clear()
-            # goal.cheapest_combination = (None,np.inf)
             for agent in self.agents:
                 if any(skill in agent.skills for skill in goal.required_skills):
                     goal.add_agent_which_has_required_skills(agent)
@@ -210,8 +207,6 @@ class Environment:
         self.agents.clear()
         self._init()
         
-        
-
 
 
     def get_normalized_skill_vectors_for_all_agents(self):
