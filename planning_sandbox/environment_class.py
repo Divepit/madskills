@@ -205,29 +205,7 @@ class Environment:
         self._starting_position = self.grid_map.random_valid_position()
         self.goals.clear()
         self.agents.clear()
-        self._init()
-        
-
-
-    def get_normalized_skill_vectors_for_all_agents(self):
-        assert self.initialised, "Environment not initialised"
-        all_skills_normalized = []
-        for agent in self.agents:
-            agent_skills_normalized = [0]*self.num_skills
-            for skill in agent.skills:
-                agent_skills_normalized[skill] = 1
-            all_skills_normalized.extend(agent_skills_normalized)
-        return all_skills_normalized
-    
-    def get_normalized_skill_vectors_for_all_goals(self):
-        assert self.initialised, "Environment not initialised"
-        all_skills_normalized = []
-        for goal in self.goals:
-            goal_skills_normalized = [0]*self.num_skills
-            for skill in goal.required_skills:
-                goal_skills_normalized[skill] = 1
-            all_skills_normalized.extend(goal_skills_normalized)
-        return all_skills_normalized        
+        self._init()  
 
     def find_numerical_solution(self, solve_type=None):
         if not self.agents_goals_connected:
@@ -249,10 +227,6 @@ class Environment:
                 if agent not in self.full_solution:
                     self.full_solution[agent] = []
                 self.full_solution[agent].extend(intermediate_solution[agent])
-        elif self.solve_type == "linalg":
-            cost = 0
-            self.replan_on_goal_claim = False
-            self.full_solution, cost = self.find_linalg_solution()
         return self.full_solution, cost
 
     def step_environment(self, fast=False):
@@ -472,47 +446,3 @@ class Environment:
                     full_solution = proposed_solution
                     cheapest_cost = proposed_solution_cost
         return full_solution, cheapest_cost
-    
-    def find_linalg_solution(self):
-        assert self.agents_goals_connected, "Environment not initialised"
-        logging.debug("Finding optimal solution")
-        agent_combination_vector = []
-        for r in range(1, len(self.agents)+1):
-            agent_combination_vector.extend(combinations(self.agents, r))
-        
-        goal_permutation_vector = []
-        for r in range(1, len(self.scheduler.unclaimed_goals)+1):
-            goal_permutation_vector.extend(permutations(self.scheduler.unclaimed_goals, r))
-        
-        agent_combination_goal_permutation_matrix = np.zeros((len(agent_combination_vector), len(goal_permutation_vector)))
-
-        for i,agent_combination in enumerate(agent_combination_vector):
-            for j,goal_permutation in enumerate(goal_permutation_vector):
-                if all([goal_permutation[0] in agent.paths_and_costs_to_goals.keys() for agent in agent_combination]) and all([self.agent_combination_has_required_skills_for_goal(agent_combination, goal) for goal in goal_permutation]):
-                    agent_combination_goal_permutation_matrix[i,j] = np.sum([self._calculate_cost_of_chain(agent, goal_permutation) for agent in agent_combination])
-                else:
-                    agent_combination_goal_permutation_matrix[i,j] = np.inf
-
-        sorted_indices = np.argsort(agent_combination_goal_permutation_matrix, axis=None)
-
-        rows, cols = np.unravel_index(sorted_indices, agent_combination_goal_permutation_matrix.shape)
-
-        covered_goals = set()
-        busy_agents = set()
-        solution = {}
-        for r, c in zip(rows, cols):
-            agent_combination = agent_combination_vector[r]
-            goal_permutation = goal_permutation_vector[c]
-            if any([goal in covered_goals for goal in goal_permutation]):
-                continue
-            cost = agent_combination_goal_permutation_matrix[r,c]
-            for agent in agent_combination:
-                busy_agents.add(agent)
-                if agent not in solution:
-                    solution[agent] = []
-                solution[agent].extend(goal_permutation)
-            for goal in goal_permutation_vector[c]:
-                covered_goals.add(goal)
-            if len(covered_goals) == len(self.scheduler.unclaimed_goals):
-                break
-        return solution, cost
