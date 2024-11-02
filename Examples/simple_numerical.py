@@ -9,7 +9,8 @@ num_skills = 3
 size = 32
 visualisation_speed = 20 # Max 200
 solve_type = 'optimal' # 'optimal' or 'fast'
-use_map = False
+use_map = True
+assume_lander = False
 
 custom_agents = []
 custom_goals = []
@@ -35,8 +36,8 @@ total_steps, steps_waited, total_cost, solve_time, amount_of_claimed_goals = my_
 
 my_visualiser.visualise_full_solution()
 
-print(f"Total steps taken: {total_steps}")
-print(f"Total steps waited: {steps_waited}")
-print(f"Total cost: {int(total_cost)}")
-print(f"Solve time: {int(solve_time*1000)} ms")
-print(f"Amount of claimed goals: {amount_of_claimed_goals}")
+    print(f"Total steps taken: {total_steps}")
+    print(f"Total steps waited: {steps_waited}")
+    print(f"Total cost: {int(total_cost)}")
+    print(f"Solve time: {int(solve_time*1000)} ms")
+    print(f"Amount of claimed goals: {amount_of_claimed_goals}")

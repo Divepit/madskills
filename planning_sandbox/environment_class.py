@@ -12,8 +12,7 @@ from planning_sandbox.benchmark_class import Benchmark
 import numpy as np
 
 class Environment:
-    def __init__(self, size, num_skills, num_agents = 1, num_goals = 1, use_geo_data=True, solve_type="optimal",replan_on_goal_claim=False, custom_agents: List[Agent] = None, custom_goals: List[Goal] = None):
-
+    def __init__(self, size, num_skills, num_agents = 1, num_goals = 1, use_geo_data=True, solve_type="optimal",replan_on_goal_claim=False, custom_agents: List[Agent] = None, custom_goals: List[Goal] = None, assume_lander=True):
         self.size = size
         self.map_diagonal = np.sqrt(2 * (size ** 2))
         self.solve_type = solve_type
@@ -35,6 +34,7 @@ class Environment:
         
         self.grid_map = GridMap(self.size, use_geo_data=use_geo_data)
         self._starting_position = self.grid_map.random_valid_position()
+        self._assume_lander = assume_lander
 
         self.initialised = False
         self.agents_goals_connected = False
@@ -78,6 +78,8 @@ class Environment:
         else:
             start_pos = self.grid_map.random_valid_position()
         for _ in range(self._initial_num_agents):
+            if not self._assume_lander:
+                start_pos = self.grid_map.random_valid_position()
             agent = Agent(start_pos)
             self.agents.append(agent)
 
@@ -107,7 +109,7 @@ class Environment:
 
         if self.custom_goals is None:
             for goal in self.goals:
-                amount_of_skills = np.random.randint(1, min(3,self.num_skills+1))
+                amount_of_skills = np.random.randint(1, self.num_skills+1)
                 skills = []
                 for _ in range(amount_of_skills):
                     skill = np.random.randint(0, self.num_skills)
@@ -121,7 +123,7 @@ class Environment:
                 if self.num_skills == 2:
                     amount_of_skills = 1
                 else:
-                    amount_of_skills = np.random.randint(1, max(1,min(3,self.num_skills)))
+                    amount_of_skills = np.random.randint(1,self.num_skills+1)
                 skills = []
                 for _ in range(amount_of_skills):
                     skill = np.random.randint(0, self.num_skills)
