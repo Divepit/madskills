@@ -1,15 +1,32 @@
 from planning_sandbox.environment_class import Environment
 from planning_sandbox.visualizer_class import Visualizer
+from planning_sandbox.agent_class import Agent
+from planning_sandbox.goal_class import Goal
 
-num_agents = 1
-num_goals = 3
-num_skills = 1
+# num_agents = 1
+# num_goals = 1
+num_skills = 3
 size = 32
-visualisation_speed = 100 # Max 200
+visualisation_speed = 20 # Max 200
 solve_type = 'optimal' # 'optimal' or 'fast'
-use_map = False
+use_map = True
+assume_lander = False
 
-my_environment = Environment(size=size, num_agents=num_agents, num_goals=num_goals, num_skills=num_skills, use_geo_data=use_map)
+custom_agents = []
+custom_goals = []
+
+custom_agents.append(Agent(initial_position=(0, 0), skills=[0]))
+custom_agents.append(Agent(initial_position=(31, 31), skills=[1]))
+custom_goals.append(Goal(position=(30, 1), skills=[0]))
+custom_goals.append(Goal(position=(1, 30), skills=[0]))
+custom_goals.append(Goal(position=(15, 15), skills=[0,1]))
+
+# For custom goals/agents
+my_environment = Environment(size=size, num_skills=num_skills, use_geo_data=use_map, custom_agents=custom_agents, custom_goals=custom_goals)
+
+# For random goals/agents
+# my_environment = Environment(size=size, num_agents=num_agents, num_goals=num_goals, num_skills=num_skills, use_geo_data=use_map)
+
 my_visualiser = Visualizer(my_environment, speed=visualisation_speed)
 
 my_environment.find_numerical_solution(solve_type=solve_type)

@@ -1,11 +1,8 @@
 import logging
 
 from typing import List, Dict
-from itertools import permutations, product, combinations
 from planning_sandbox.agent_class import Agent
 from planning_sandbox.goal_class import Goal
-
-import numpy as np
 
 class Scheduler:
     def __init__(self, agents, goals):
@@ -39,17 +36,6 @@ class Scheduler:
         self.goal_assignments = {}
         self.unclaimed_goals = [goal for goal in self.goals if not goal.claimed]
         self.last_visited_goals = {agent: None for agent in self.agents}
-
-    def get_normalized_claimed_goals(self):
-        return [int(goal.claimed) for goal in self.goals]
-    
-    def get_allowed_goal_agent_pairs(self, goals: List[Goal], agents: List[Agent]):
-        allowed_pairs = []
-        for agent in agents:
-            for goal in goals:
-                if self.agent_has_one_or_more_required_skills_for_goal(agent, goal):
-                    allowed_pairs.append((agent, goal))
-        return allowed_pairs
     
     def all_goals_claimed(self):
         return len(self.unclaimed_goals) == 0
@@ -66,24 +52,6 @@ class Scheduler:
         self.unclaimed_goals = [goal for goal in self.goals if not goal.claimed]
         logging.debug("Goal statuses updated")
         return claimed_a_goal
-    
-    def is_goal_position(self, position):
-        return any([goal.position == position for goal in self.goals])
-    
-    def get_goal_at_position(self, position):
-        for goal in self.goals:
-            if goal.position == position:
-                return goal
-        return None
-    
-    def agent_has_one_or_more_required_skills_for_goal(self, agent: Agent, goal: Goal):
-        return any([skill in agent.skills for skill in goal.required_skills])
-
-    def agent_combination_has_required_skills_for_goal(self, agents: List[Agent], goal: Goal):
-        skills = []
-        for agent in agents:
-            skills.extend(agent.skills)
-        return set(goal.required_skills).issubset(set(skills))
 
     # SOLVERS            
     

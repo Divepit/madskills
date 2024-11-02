@@ -12,7 +12,7 @@ from planning_sandbox.benchmark_class import Benchmark
 import numpy as np
 
 class Environment:
-    def __init__(self, size, num_agents, num_goals, num_skills, use_geo_data=True, solve_type="optimal",replan_on_goal_claim=False):
+    def __init__(self, size, num_skills, num_agents = 1, num_goals = 1, use_geo_data=True, solve_type="optimal",replan_on_goal_claim=False, custom_agents: List[Agent] = None, custom_goals: List[Goal] = None, assume_lander=True):
         self.size = size
         self.map_diagonal = np.sqrt(2 * (size ** 2))
         self.solve_type = solve_type
@@ -20,17 +20,21 @@ class Environment:
         self.replan_on_goal_claim = replan_on_goal_claim
         self.deadlocked = False
 
-        self.goals: List[Goal] = []
-        self.agents: List[Agent] = []
+        self.custom_goals = custom_goals
+        self.custom_agents = custom_agents
+        self.goals: List[Goal] = [] if self.custom_goals is None else self.custom_goals
+        self.agents: List[Agent] = [] if self.custom_agents is None else self.custom_agents
+        self.new_goal_added = False if self.custom_goals is None else True
         self.scheduler = Scheduler(agents=self.agents, goals=self.goals)
         self.full_solution = {}
         
 
-        self._initial_num_agents = num_agents
-        self._initial_num_goals = num_goals
+        self._initial_num_agents = num_agents if self.custom_agents is None else len(self.custom_agents)
+        self._initial_num_goals = num_goals if self.custom_goals is None else len(self.custom_goals)
         
         self.grid_map = GridMap(self.size, use_geo_data=use_geo_data)
         self._starting_position = self.grid_map.random_valid_position()
+        self._assume_lander = assume_lander
 
         self.initialised = False
         self.agents_goals_connected = False
@@ -40,10 +44,12 @@ class Environment:
 
     def _init(self):
         assert not self.initialised, "Environment already initialised"
-        self._initialize_goals()
-        self._initialize_agents()
+        if self.custom_goals is None:
+            self._initialize_goals()
+        if self.custom_agents is None:
+            self._initialize_agents()
 
-        while not self._all_skills_represented():
+        while self.custom_agents is None and self.custom_goals is None and not self._all_skills_represented():
             self._reset_skills()
             self._initialize_skills()
         
@@ -72,6 +78,8 @@ class Environment:
         else:
             start_pos = self.grid_map.random_valid_position()
         for _ in range(self._initial_num_agents):
+            if not self._assume_lander:
+                start_pos = self.grid_map.random_valid_position()
             agent = Agent(start_pos)
             self.agents.append(agent)
 
@@ -89,36 +97,40 @@ class Environment:
 
     def _initialize_skills(self):
         if self.num_skills == 1:
-            for goal in self.goals:
-                if goal.required_skills == []:
-                    goal.required_skills.append(0)
-            for agent in self.agents:
-                if agent.skills == []:
-                    agent.skills.append(0)
+            if self.custom_goals is None:
+                for goal in self.goals:
+                    if goal.required_skills == []:
+                        goal.required_skills.append(0)
+            if self.custom_agents is None:
+                for agent in self.agents:
+                    if agent.skills == []:
+                        agent.skills.append(0)
             return
 
-        for goal in self.goals:
-            amount_of_skills = np.random.randint(1, min(3,self.num_skills+1))
-            skills = []
-            for _ in range(amount_of_skills):
-                skill = np.random.randint(0, self.num_skills)
-                while skill in skills:
+        if self.custom_goals is None:
+            for goal in self.goals:
+                amount_of_skills = np.random.randint(1, self.num_skills+1)
+                skills = []
+                for _ in range(amount_of_skills):
                     skill = np.random.randint(0, self.num_skills)
-                skills.append(skill)
-            goal.required_skills = skills
+                    while skill in skills:
+                        skill = np.random.randint(0, self.num_skills)
+                    skills.append(skill)
+                goal.required_skills = skills
                 
-        for agent in self.agents:
-            if self.num_skills == 2:
-                amount_of_skills = 1
-            else:
-                amount_of_skills = np.random.randint(1, max(1,min(3,self.num_skills)))
-            skills = []
-            for _ in range(amount_of_skills):
-                skill = np.random.randint(0, self.num_skills)
-                while skill in skills:
+        if self.custom_agents is None:
+            for agent in self.agents:
+                if self.num_skills == 2:
+                    amount_of_skills = 1
+                else:
+                    amount_of_skills = np.random.randint(1,self.num_skills+1)
+                skills = []
+                for _ in range(amount_of_skills):
                     skill = np.random.randint(0, self.num_skills)
-                skills.append(skill)
-            agent.skills = skills
+                    while skill in skills:
+                        skill = np.random.randint(0, self.num_skills)
+                    skills.append(skill)
+                agent.skills = skills
 
     def _all_skills_represented(self):
         all_skills = [0]*self.num_skills
@@ -137,9 +149,6 @@ class Environment:
     def connect_agents_and_goals(self):
         inform_goals_of_agents_bench = Benchmark("inform_goals_of_agents", start_now=True, silent=True)
         for goal in self.scheduler.unclaimed_goals:
-            # goal.agents_which_have_required_skills.clear()
-            # goal.agent_combinations_which_solve_goal.clear()
-            # goal.cheapest_combination = (None,np.inf)
             for agent in self.agents:
                 if any(skill in agent.skills for skill in goal.required_skills):
                     goal.add_agent_which_has_required_skills(agent)
@@ -197,31 +206,7 @@ class Environment:
         self._starting_position = self.grid_map.random_valid_position()
         self.goals.clear()
         self.agents.clear()
-        self._init()
-        
-        
-
-
-
-    def get_normalized_skill_vectors_for_all_agents(self):
-        assert self.initialised, "Environment not initialised"
-        all_skills_normalized = []
-        for agent in self.agents:
-            agent_skills_normalized = [0]*self.num_skills
-            for skill in agent.skills:
-                agent_skills_normalized[skill] = 1
-            all_skills_normalized.extend(agent_skills_normalized)
-        return all_skills_normalized
-    
-    def get_normalized_skill_vectors_for_all_goals(self):
-        assert self.initialised, "Environment not initialised"
-        all_skills_normalized = []
-        for goal in self.goals:
-            goal_skills_normalized = [0]*self.num_skills
-            for skill in goal.required_skills:
-                goal_skills_normalized[skill] = 1
-            all_skills_normalized.extend(goal_skills_normalized)
-        return all_skills_normalized        
+        self._init()  
 
     def find_numerical_solution(self, solve_type=None):
         if not self.agents_goals_connected:
@@ -243,10 +228,6 @@ class Environment:
                 if agent not in self.full_solution:
                     self.full_solution[agent] = []
                 self.full_solution[agent].extend(intermediate_solution[agent])
-        elif self.solve_type == "linalg":
-            cost = 0
-            self.replan_on_goal_claim = False
-            self.full_solution, cost = self.find_linalg_solution()
         return self.full_solution, cost
 
     def step_environment(self, fast=False):
@@ -365,17 +346,20 @@ class Environment:
         full_solution = {}
         action_vector = action_vector
         for flat_index, selected_goal in enumerate(action_vector):
-            if selected_goal-1 > -1:  # Only process if action is valid
-                # Compute agent and goal indices from flat_index
-                agent_index = flat_index // len(self.goals)
-                
-                agent = self.agents[agent_index]
-                goal = self.goals[selected_goal-1]
+            if selected_goal-1 != -1:  # Only process if action is valid
+                try:
+                    # Compute agent and goal indices from flat_index
+                    agent_index = flat_index // len(self.goals)
+                    
+                    agent = self.agents[agent_index]
+                    goal = self.goals[selected_goal-1]
 
-                # Add goal to the agent's full solution
-                if agent not in full_solution:
-                    full_solution[agent] = []
-                full_solution[agent].append(goal)
+                    # Add goal to the agent's full solution
+                    if agent not in full_solution:
+                        full_solution[agent] = []
+                    full_solution[agent].append(goal)
+                except IndexError:
+                    logging.error(f"IndexError: flat_index={flat_index}, selected_goal={selected_goal}")
         return full_solution
 
 
@@ -492,47 +476,3 @@ class Environment:
                     full_solution = proposed_solution
                     cheapest_cost = proposed_solution_cost
         return full_solution, cheapest_cost
-    
-    def find_linalg_solution(self):
-        assert self.agents_goals_connected, "Environment not initialised"
-        logging.debug("Finding optimal solution")
-        agent_combination_vector = []
-        for r in range(1, len(self.agents)+1):
-            agent_combination_vector.extend(combinations(self.agents, r))
-        
-        goal_permutation_vector = []
-        for r in range(1, len(self.scheduler.unclaimed_goals)+1):
-            goal_permutation_vector.extend(permutations(self.scheduler.unclaimed_goals, r))
-        
-        agent_combination_goal_permutation_matrix = np.zeros((len(agent_combination_vector), len(goal_permutation_vector)))
-
-        for i,agent_combination in enumerate(agent_combination_vector):
-            for j,goal_permutation in enumerate(goal_permutation_vector):
-                if all([goal_permutation[0] in agent.paths_and_costs_to_goals.keys() for agent in agent_combination]) and all([self.scheduler.agent_combination_has_required_skills_for_goal(agent_combination, goal) for goal in goal_permutation]):
-                    agent_combination_goal_permutation_matrix[i,j] = np.sum([self._calculate_cost_of_chain(agent, goal_permutation) for agent in agent_combination])
-                else:
-                    agent_combination_goal_permutation_matrix[i,j] = np.inf
-
-        sorted_indices = np.argsort(agent_combination_goal_permutation_matrix, axis=None)
-
-        rows, cols = np.unravel_index(sorted_indices, agent_combination_goal_permutation_matrix.shape)
-
-        covered_goals = set()
-        busy_agents = set()
-        solution = {}
-        for r, c in zip(rows, cols):
-            agent_combination = agent_combination_vector[r]
-            goal_permutation = goal_permutation_vector[c]
-            if any([goal in covered_goals for goal in goal_permutation]):
-                continue
-            cost = agent_combination_goal_permutation_matrix[r,c]
-            for agent in agent_combination:
-                busy_agents.add(agent)
-                if agent not in solution:
-                    solution[agent] = []
-                solution[agent].extend(goal_permutation)
-            for goal in goal_permutation_vector[c]:
-                covered_goals.add(goal)
-            if len(covered_goals) == len(self.scheduler.unclaimed_goals):
-                break
-        return solution, cost

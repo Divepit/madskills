@@ -1,8 +1,8 @@
 class Agent:
-    def __init__(self, initial_position):
+    def __init__(self, initial_position, skills=None):
         self.initial_position = initial_position
         self.position = initial_position
-        self.skills = []
+        self.skills = [] if skills is None else skills
         self.paths_and_costs_to_goals = {}
         self.steps_moved = 0
         self.steps_waited = 0
