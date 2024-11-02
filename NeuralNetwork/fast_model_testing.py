@@ -40,7 +40,7 @@ model = keras.models.load_model(current_directory+'/models/good_3a_5g_2sk_100x10
 num_agents = 3
 num_goals = 5
 num_skills = 2
-size = 100
+size = 200
 use_geo_data = True
 
 # Create environment (needed for input generation and visualization)

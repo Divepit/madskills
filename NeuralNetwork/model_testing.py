@@ -68,7 +68,7 @@ def generate_input(env: Environment):
     return observation_vector
 
 
-runs = 200
+runs = 100
 successes = []
 optimal_costs = []
 predicted_costs = []
@@ -158,11 +158,19 @@ print(f"Cost Difference Median: {np.median(cost_diff)}")
 
 import matplotlib.pyplot as plt  # Already imported at the top
 
-# Plot settings for better visuals
-plt.style.use('seaborn-v0_8-darkgrid')  # Use an available style
-plt.rcParams.update({'figure.figsize': (10, 6), 'figure.dpi': 100})
 
-# Include environment parameters for reference
+# Plot settings for better visuals in a publication
+plt.style.use('seaborn-v0_8-darkgrid')  # Use an available style
+plt.rcParams.update({
+    'figure.figsize': (10, 6),
+    'figure.dpi': 200,
+    'axes.titlesize': 24,   # Title font size
+    'axes.labelsize': 20,   # x and y labels font size
+    'xtick.labelsize': 20,  # x-axis tick font size
+    'ytick.labelsize': 20,  # y-axis tick font size
+    'legend.fontsize': 20,  # Legend font size
+})
+
 env_params = f'Agents: {num_agents}, Goals: {num_goals}, Skills: {num_skills}, Size: {size}, Runs: {runs}'
 
 # 1. Bar Chart of Mean Computation Times
@@ -172,7 +180,7 @@ labels = ['Expert Solution', 'NN Model']
 plt.bar(labels, times, color=['blue', 'green'])
 plt.title('Mean Computation Times')
 plt.ylabel('Time (ms)')
-plt.text(0.5, max(times)*0.9, env_params, ha='center', fontsize=9)
+plt.text(0.5, max(times)*0.9, env_params, ha='center', fontsize=12)
 plt.savefig('mean_computation_times.png')
 plt.close()
 print("Saved 'mean_computation_times.png'.")
@@ -182,7 +190,7 @@ plt.figure()
 plt.boxplot(cost_diff, vert=False)
 plt.title('Cost Difference Between NN Model and Expert Solution')
 plt.xlabel('Cost Difference (NN Model Cost - Expert Cost)')
-plt.text(np.mean(cost_diff), 1.05, env_params, ha='center', fontsize=9)
+plt.text(np.mean(cost_diff), 1.05, env_params, ha='center', fontsize=12)
 plt.savefig('cost_difference_boxplot.png')
 plt.close()
 print("Saved 'cost_difference_boxplot.png'.")
@@ -193,8 +201,8 @@ costs = [np.mean(optimal_costs), np.mean(predicted_costs)]
 labels = ['Expert Solution', 'NN Model']
 plt.bar(labels, costs, color=['blue', 'green'])
 plt.title('Mean Costs')
-plt.ylabel('Total Cost (units)')  # Replace 'units' with actual units if known
-plt.text(0.5, max(costs)*0.9, env_params, ha='center', fontsize=9)
+plt.ylabel('Total Cost (units)')
+plt.text(0.5, max(costs)*0.9, env_params, ha='center', fontsize=12)
 plt.savefig('mean_costs.png')
 plt.close()
 print("Saved 'mean_costs.png'.")
@@ -207,11 +215,7 @@ plt.xlabel('Cost Difference (NN Model Cost - Expert Cost)')
 plt.ylabel('Computation Time Difference (ms)')
 plt.axhline(0, color='grey', linestyle='--', linewidth=1)
 plt.axvline(0, color='grey', linestyle='--', linewidth=1)
-plt.text(0.5, max(time_diff)*0.9, env_params, ha='center', fontsize=9)
+plt.text(0.5, max(time_diff)*0.9, env_params, ha='center', fontsize=12)
 plt.savefig('time_vs_cost_difference.png')
 plt.close()
 print("Saved 'time_vs_cost_difference.png'.")
-
-# ===========================
-# Plotting code ends here
-# ===========================
