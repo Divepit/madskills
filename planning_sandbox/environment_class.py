@@ -183,6 +183,7 @@ class Environment:
         inform_goals_of_costs_bench.stop()        
 
     def soft_reset(self):
+        logging.debug("Soft resetting environment")
         self.deadlocked = False
         self.grid_map.reset()
         for goal in self.goals:
@@ -218,8 +219,8 @@ class Environment:
             cost = 0
             if self.full_solution is None:
                 self.full_solution = {}
-            intermediate_solution, intermediate_cost = self.scheduler.find_fast_solution()
-            cost += intermediate_cost
+            intermediate_solution = self.scheduler.find_fast_solution()
+            cost = np.inf
             for agent in intermediate_solution:
                 if agent not in self.full_solution:
                     self.full_solution[agent] = []
@@ -238,9 +239,10 @@ class Environment:
         return not_deadlocked
 
     def solve_full_solution(self, fast=False, soft_reset=True):
-        
         if soft_reset:
             self.soft_reset()
+        else:
+            self.deadlocked = False
         
         solving_bench: Benchmark = Benchmark("solve_full_solution", start_now=True, silent=True)
         while not (self.deadlocked or self.scheduler.all_goals_claimed()):
@@ -342,6 +344,33 @@ class Environment:
         flattened_action_vector = [goal+1 for sublist in action_vector for goal in sublist]
         
         return flattened_action_vector
+    
+    def get_sequential_action_vectors(self, action_vector=None):
+        if action_vector is None:
+            action_vector = self.get_action_vector()
+        sequential_action_vectors = []
+        for i in range(0, len(action_vector), len(self.goals)):
+            sequential_action_vectors.append(action_vector[i:i+len(self.goals)])
+        
+        output_vectors = []
+        for i,_ in enumerate(self.goals):
+            new_output_vector = []
+            for vec in sequential_action_vectors:
+                new_output_vector.append(vec[i])
+            output_vectors.append(new_output_vector)
+
+        return output_vectors
+    
+    def get_full_solution_from_sequential_action_vectors(self, sequential_action_vectors):
+        full_solution = {}
+        for action_vector in enumerate(sequential_action_vectors):
+            for agent_index,goal_index in enumerate(action_vector):
+                agent = self.agents[agent_index]
+                goal = self.goals[goal_index]
+                if agent not in full_solution:
+                    full_solution[agent] = []
+                full_solution[agent].append(goal)
+        return full_solution
 
     # has to start at 0, not at -1
     def get_full_solution_from_action_vector(self, action_vector):

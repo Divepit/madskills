@@ -101,5 +101,5 @@ class Scheduler:
             unaccounted_for_goals.remove(cheapest_goal)
             cheapest_combinations.clear()
 
-        return full_solution, cost
+        return full_solution
     

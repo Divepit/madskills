@@ -32,6 +32,8 @@ my_visualiser = Visualizer(my_environment, speed=visualisation_speed)
 my_environment.find_numerical_solution(solve_type=solve_type)
 my_solution = my_environment.full_solution
 
+print(my_environment.get_sequential_action_vectors())
+
 total_steps, steps_waited, total_cost, solve_time, amount_of_claimed_goals = my_environment.solve_full_solution()
 
 my_visualiser.visualise_full_solution()
