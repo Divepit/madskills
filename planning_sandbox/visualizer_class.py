@@ -165,7 +165,7 @@ class Visualizer:
                              path[i][1] * self.cell_size + self.cell_size // 2)
                     end = (path[i+1][0] * self.cell_size + self.cell_size // 2,
                            path[i+1][1] * self.cell_size + self.cell_size // 2)
-                    pygame.draw.line(self.screen, PATH, start, end, 2)
+                    pygame.draw.line(self.screen, PATH, start, end, 3)
 
     def run_step(self):
         logging.debug("Running visualisation step")
@@ -177,10 +177,6 @@ class Visualizer:
         self.draw_assignments()
         pygame.display.flip()
         clock.tick(self.speed)
-
-    def close(self):
-        self.ready = False
-        pygame.quit()
 
     def visualise_full_solution(self, max_iterations = None, fast=False, soft_reset=True):
         if fast:

@@ -11,12 +11,9 @@ class Scheduler:
         self.unclaimed_goals: List[Goal] = [goal for goal in goals if not goal.claimed]
         self.goal_assignments: Dict[Agent, Goal] = {}
         self.last_visited_goals = {agent: None for agent in self.agents}
-
-    def _get_agents_present_at_goal(self, goal: Goal):
-        return [agent for agent in self.agents if agent.position == goal.position]
     
     def _get_skills_of_agents_present_at_goal(self, goal: Goal):
-        agents = self._get_agents_present_at_goal(goal)
+        agents = [agent for agent in self.agents if agent.position == goal.position]
         if not agents:
             return []
         skills = []

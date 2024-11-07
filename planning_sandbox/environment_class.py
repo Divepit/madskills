@@ -14,7 +14,6 @@ import numpy as np
 class Environment:
     def __init__(self, size, num_skills, num_agents = 1, num_goals = 1, use_geo_data=True, solve_type="optimal",replan_on_goal_claim=False, custom_agents: List[Agent] = None, custom_goals: List[Goal] = None, assume_lander=True):
         self.size = size
-        self.map_diagonal = np.sqrt(2 * (size ** 2))
         self.solve_type = solve_type
         self.num_skills = num_skills
         self.replan_on_goal_claim = replan_on_goal_claim
@@ -344,33 +343,6 @@ class Environment:
         flattened_action_vector = [goal+1 for sublist in action_vector for goal in sublist]
         
         return flattened_action_vector
-    
-    def get_sequential_action_vectors(self, action_vector=None):
-        if action_vector is None:
-            action_vector = self.get_action_vector()
-        sequential_action_vectors = []
-        for i in range(0, len(action_vector), len(self.goals)):
-            sequential_action_vectors.append(action_vector[i:i+len(self.goals)])
-        
-        output_vectors = []
-        for i,_ in enumerate(self.goals):
-            new_output_vector = []
-            for vec in sequential_action_vectors:
-                new_output_vector.append(vec[i])
-            output_vectors.append(new_output_vector)
-
-        return output_vectors
-    
-    def get_full_solution_from_sequential_action_vectors(self, sequential_action_vectors):
-        full_solution = {}
-        for action_vector in enumerate(sequential_action_vectors):
-            for agent_index,goal_index in enumerate(action_vector):
-                agent = self.agents[agent_index]
-                goal = self.goals[goal_index]
-                if agent not in full_solution:
-                    full_solution[agent] = []
-                full_solution[agent].append(goal)
-        return full_solution
 
     # has to start at 0, not at -1
     def get_full_solution_from_action_vector(self, action_vector):

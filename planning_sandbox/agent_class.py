@@ -64,9 +64,6 @@ class Agent:
             self.steps_moved += 1
         
         self.accumulated_cost += action_cost
-    
-    def add_skill(self, skill):
-        self.skills.append(skill)
 
     def add_path_to_goal(self, goal, path, cost):
         self.paths_and_costs_to_goals[goal] = (path, cost)

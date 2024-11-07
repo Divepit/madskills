@@ -37,7 +37,6 @@ class GridMap:
 
         self.size = size
         self.graph = None
-        self.is_connected = False
 
         self.path_lookup_table = {}
 
@@ -55,11 +54,6 @@ class GridMap:
 
     def _random_position(self):
         return (np.random.randint(0, self.size), np.random.randint(0, self.size))
-
-    def _generate_connected_grid(self):
-        self.graph = nx.grid_2d_graph(self.size, self.size)
-        if nx.is_connected(self.graph):
-            self.is_connected = True
     
     def _print_tif_info(self,file_path):
         logging.debug("TIFF File Information:")
@@ -219,40 +213,6 @@ class GridMap:
         self.path_lookup_table[(start, goal)] = (path, cost)
 
         return path
-    
-    def get_normalized_positions(self, positions):
-        return [(pos[0] / self.size, pos[1] / self.size) for pos in positions]
-    
-    def random_valid_location_close_to_position(self,position, max_distance):
-        x,y = position
-        x += np.random.randint(-max_distance,max_distance+1)
-        y += np.random.randint(-max_distance,max_distance+1)
-        x = np.clip(x,0,self.size-1)
-        y = np.clip(y,0,self.size-1)
-        if not self._is_valid_position((x,y)):
-            return self.random_valid_location_close_to_position(position,max_distance)
-        return (x,y)
-    
-    def check_if_connected(self):
-        if self.use_geo_data or self.graph is None:
-            return False
-        if nx.is_connected(self.graph):
-            return True
-        
-    def validate_action(self, agent: Agent, action):
-        position = agent.position
-        if action == 'left' or action == 1:
-            position = (position[0] - 1, position[1])
-        elif action == 'right' or action == 2:
-            position = (position[0] + 1, position[1])
-        elif action == 'up' or action == 3:
-            position = (position[0], position[1] - 1)
-        elif action == 'down' or action == 4:
-            position = (position[0], position[1] + 1)
-        elif action == 'stay' or action == 0:
-            return True
-        is_valid = self._is_valid_position(position)
-        return is_valid
 
     def generate_shortest_path_for_agent(self, agent: Agent, goal: Goal):
         if agent in self.paths:
@@ -269,9 +229,7 @@ class GridMap:
         path = self.shortest_path(start, goal)
 
         return path
-    
-    def assign_path_to_agent(self, agent: Agent, path):
-        self.paths[agent] = path
+        
     
     def get_move_and_cost_to_reach_next_position(self, agent: Agent):
         current_position = agent.position
@@ -281,5 +239,5 @@ class GridMap:
     
     def assign_shortest_path_for_goal_to_agent(self, agent: Agent, goal: Goal):
         path = self.generate_shortest_path_for_agent(agent, goal) 
-        self.assign_path_to_agent(agent, path)
+        self.paths[agent] = path
     

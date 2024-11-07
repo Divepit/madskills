@@ -16,9 +16,6 @@ class Goal:
         self.cheapest_combination = (None,np.inf)
         self.paths_and_costs_to_other_goals = {}
 
-    def add_skill(self, skill):
-        self.required_skills.append(skill)
-
     def reset(self, position=None):
         self.claimed = False
         self.required_skills.clear()
