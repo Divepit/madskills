@@ -120,10 +120,7 @@ class Environment:
                 
         if self.custom_agents is None:
             for agent in self.agents:
-                if self.num_skills == 2:
-                    amount_of_skills = 1
-                else:
-                    amount_of_skills = np.random.randint(1,self.num_skills+1)
+                amount_of_skills = np.random.randint(1,self.num_skills+1)
                 skills = []
                 for _ in range(amount_of_skills):
                     skill = np.random.randint(0, self.num_skills)
@@ -240,9 +237,10 @@ class Environment:
         not_deadlocked = self.update(fast=fast)
         return not_deadlocked
 
-    def solve_full_solution(self, fast=False):
+    def solve_full_solution(self, fast=False, soft_reset=True):
         
-        self.soft_reset()
+        if soft_reset:
+            self.soft_reset()
         
         solving_bench: Benchmark = Benchmark("solve_full_solution", start_now=True, silent=True)
         while not (self.deadlocked or self.scheduler.all_goals_claimed()):
@@ -258,12 +256,15 @@ class Environment:
 
         return total_steps, steps_waited, total_cost, solve_time, amount_of_claimed_goals
     
-    def get_observation_vector(self):
+    def get_observation_vector(self, pad_agents: int = 0, pad_goals: int = 0, pad_map: int = 0):
         goals_map = []
         # goals_map = np.zeros((self.size, self.size), dtype=np.int16)
         for goal in self.goals:
             goals_map.append(goal.position[0]/self.size)
             goals_map.append(goal.position[1]/self.size)
+        for _ in range(pad_goals):
+            goals_map.append(2)
+            goals_map.append(2)
         goals_map = np.array(goals_map, dtype=np.float32)
             # goals_map[goal.position[0], goal.position[1]] = 1
         # agents_map = np.zeros((self.size, self.size), dtype=np.int16)
@@ -272,24 +273,55 @@ class Environment:
             agents_map.append(agent.position[0]/self.size)
             agents_map.append(agent.position[1]/self.size)
             # agents_map[agent.position[0], agent.position[1]] = 1
+        for _ in range(pad_agents):
+            agents_map.append(2)
+            agents_map.append(2)
         agents_map = np.array(agents_map, dtype=np.float32)
 
         flattened_map = self.grid_map.downscaled_data.flatten()
+        for _ in range(pad_map):
+            flattened_map = np.append(flattened_map, 2)
+
         min_value = np.min(flattened_map)
         max_value = np.max(flattened_map)
         normalized_map = 2*((flattened_map - min_value) / (max_value - min_value))-1
-    
 
+
+        agent_skills = [[(1 if skill in agent.skills else 0) for skill in range(self.num_skills)] 
+            for agent in self.agents]
+        agent_skills.extend([[2]*self.num_skills for _ in range(pad_agents)])
+        agent_skills = np.array(agent_skills, dtype=np.int16).flatten()
+
+        goal_required_skills = [[(1 if skill in goal.required_skills else 0) for skill in range(self.num_skills)] 
+            for goal in self.goals]
+        goal_required_skills.extend([[2]*self.num_skills for _ in range(pad_goals)])
+        goal_required_skills = np.array(goal_required_skills, dtype=np.int16).flatten()
+
+        claimed_goals = [1 if goal.claimed else 0 for goal in self.goals]
+        claimed_goals.extend([2]*pad_goals)
+        claimed_goals = np.array(claimed_goals, dtype=np.int16)
+
+        steps_walked = [agent.steps_moved for agent in self.agents]
+        steps_walked.extend([0]*pad_agents)
+
+        steps_waited = [agent.steps_waited for agent in self.agents]
+        steps_waited.extend([0]*pad_agents)
+
+        total_cost = [agent.accumulated_cost for agent in self.agents]
+        total_cost.extend([0]*pad_agents)
+        
+        
         observation_vector = {
             
-            "claimed_goals": np.array([1 if goal.claimed else 0 for goal in self.goals], dtype=np.int16),
-            "map_elevations": normalized_map.astype(np.float32),
+            "claimed_goals": claimed_goals,
+            # "map_elevations": normalized_map.astype(np.float32),
             "goal_positions": goals_map,
             "agent_positions": agents_map,
-            "goal_required_skills": np.array([[(1 if skill in goal.required_skills else 0) for skill in range(self.num_skills)] 
-            for goal in self.goals], dtype=np.int16).flatten(),
-            "agent_skills": np.array([[(1 if skill in agent.skills else 0) for skill in range(self.num_skills)] 
-            for agent in self.agents], dtype=np.int16).flatten(),
+            "goal_required_skills": goal_required_skills,
+            "agent_skills": agent_skills,
+            # "steps_walked": np.array(steps_walked, dtype=np.int16),
+            # "steps_waited": np.array(steps_waited, dtype=np.int16),
+            # "costs": np.array(total_cost, dtype=np.int16)
         }
         return observation_vector
     
@@ -329,7 +361,8 @@ class Environment:
                         full_solution[agent] = []
                     full_solution[agent].append(goal)
                 except IndexError:
-                    logging.error(f"IndexError: flat_index={flat_index}, selected_goal={selected_goal}")
+                    pass
+                    # logging.error(f"IndexError: flat_index={flat_index}, selected_goal={selected_goal}")
         return full_solution
 
 

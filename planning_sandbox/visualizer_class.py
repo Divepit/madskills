@@ -175,12 +175,11 @@ class Visualizer:
     def close(self):
         pygame.quit()
 
-    def visualise_full_solution(self, max_iterations = None, fast=False):
+    def visualise_full_solution(self, max_iterations = None, fast=False, soft_reset=True):
         if fast:
             logging.debug("Visualising fast solution")
-            
-        self.env.soft_reset()
-        self.setup_pygame()
+        if soft_reset:
+            self.env.soft_reset()
         
         if max_iterations is None:
             max_iterations = self.size**2
@@ -190,8 +189,4 @@ class Visualizer:
             self.run_step()
             if self.env.scheduler.all_goals_claimed() or not not_deadlocked:
                 break
-        if not not_deadlocked:
-            logging.warning("Terminated visualisation due to deadlock")
-            time.sleep(1)
-        self.close()
     
