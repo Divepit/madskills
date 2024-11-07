@@ -59,8 +59,8 @@ class Environment:
     def _init_agent_goal_connections(self):
         assert self.initialised, "Environment not initialised"
         assert not self.agents_goals_connected, "Agents and goals already connected"
-        self.connect_agents_and_goals()
-        self.inform_goals_of_costs_to_other_goals()
+        self._connect_agents_and_goals()
+        self._inform_goals_of_costs_to_other_goals()
         self.agents_goals_connected = True
 
     def _log_environment_info(self):
@@ -142,7 +142,7 @@ class Environment:
             goal.required_skills = []
         self._initialize_skills()  
 
-    def connect_agents_and_goals(self):
+    def _connect_agents_and_goals(self):
         inform_goals_of_agents_bench = Benchmark("inform_goals_of_agents", start_now=True, silent=True)
         for goal in self.scheduler.unclaimed_goals:
             for agent in self.agents:
@@ -161,8 +161,8 @@ class Environment:
         for goal in self.scheduler.unclaimed_goals:
             goal.generate_agent_combinations_which_solve_goal()
 
-    def inform_goals_of_costs_to_other_goals(self):
-        inform_goals_of_costs_bench = Benchmark("inform_goals_of_costs_to_other_goals", start_now=True, silent=True)
+    def _inform_goals_of_costs_to_other_goals(self):
+        inform_goals_of_costs_bench = Benchmark("_inform_goals_of_costs_to_other_goals", start_now=True, silent=True)
         for goal in self.scheduler.unclaimed_goals:
             for other_goal in self.goals:
                 if goal == other_goal:
@@ -179,7 +179,49 @@ class Environment:
                     other_goal.add_path_to_other_goal(goal, path, cost)
 
 
-        inform_goals_of_costs_bench.stop()        
+        inform_goals_of_costs_bench.stop()    
+
+    def _replan(self):
+        logging.debug("Replanning")
+        self._connect_agents_and_goals()
+        new_goal = False
+        for goal in self.goals:
+            if  len(goal.paths_and_costs_to_other_goals) == 0:
+                new_goal = True
+        if new_goal:
+            self._inform_goals_of_costs_to_other_goals()
+        self.find_numerical_solution()
+        self.new_goal_added = False
+
+    def _calculate_cost_of_chain(self, agent: Agent, chain: List[Goal]):
+        cost = 0
+        length = 0
+        if not chain:
+            return cost, length
+        
+        first_goal = chain[0]
+
+        if self.agents_goals_connected and first_goal in agent.paths_and_costs_to_goals:
+            cost = agent.paths_and_costs_to_goals[first_goal][1]
+            length = len(agent.paths_and_costs_to_goals[first_goal][0])
+        else:
+            path = self.grid_map.generate_shortest_path_for_agent(agent, first_goal)
+            cost = self.grid_map.calculate_path_cost(path)
+            length = len(path)
+
+        for i in range(1,len(chain)):
+            previous_goal = chain[i-1]
+            current_goal = chain[i]
+            if previous_goal == current_goal:
+                continue
+            if self.agents_goals_connected:
+                cost += previous_goal.paths_and_costs_to_other_goals[current_goal][1]
+                length += len(previous_goal.paths_and_costs_to_other_goals[current_goal][0])
+            else:
+                path = self.grid_map.shortest_path(previous_goal.position, current_goal.position)
+                cost += self.grid_map.calculate_path_cost(path)
+                length += len(path)
+        return cost, length
 
     def soft_reset(self):
         logging.debug("Soft resetting environment")
@@ -394,19 +436,6 @@ class Environment:
         logging.debug("Environment updated")
         return not self.deadlocked
 
-
-    def _replan(self):
-        logging.debug("Replanning")
-        self.connect_agents_and_goals()
-        new_goal = False
-        for goal in self.goals:
-            if  len(goal.paths_and_costs_to_other_goals) == 0:
-                new_goal = True
-        if new_goal:
-            self.inform_goals_of_costs_to_other_goals()
-        self.find_numerical_solution()
-        self.new_goal_added = False
-
     
     def get_agent_benchmarks(self):
         total_steps = 0
@@ -428,35 +457,6 @@ class Environment:
                 return np.inf
         return solution_cost
     
-    def _calculate_cost_of_chain(self, agent: Agent, chain: List[Goal]):
-        cost = 0
-        length = 0
-        if not chain:
-            return cost, length
-        
-        first_goal = chain[0]
-
-        if self.agents_goals_connected and first_goal in agent.paths_and_costs_to_goals:
-            cost = agent.paths_and_costs_to_goals[first_goal][1]
-            length = len(agent.paths_and_costs_to_goals[first_goal][0])
-        else:
-            path = self.grid_map.generate_shortest_path_for_agent(agent, first_goal)
-            cost = self.grid_map.calculate_path_cost(path)
-            length = len(path)
-
-        for i in range(1,len(chain)):
-            previous_goal = chain[i-1]
-            current_goal = chain[i]
-            if previous_goal == current_goal:
-                continue
-            if self.agents_goals_connected:
-                cost += previous_goal.paths_and_costs_to_other_goals[current_goal][1]
-                length += len(previous_goal.paths_and_costs_to_other_goals[current_goal][0])
-            else:
-                path = self.grid_map.shortest_path(previous_goal.position, current_goal.position)
-                cost += self.grid_map.calculate_path_cost(path)
-                length += len(path)
-        return cost, length
     
     def find_optimal_solution(self):
         assert self.agents_goals_connected, "Agents and goals not connected"
