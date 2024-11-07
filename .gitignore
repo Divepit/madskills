@@ -9,3 +9,4 @@ saved_models
 *.pkl
 *.egg-info
 *.h5
+*.png
