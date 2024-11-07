@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3 import A2C
 
-from IL_env import ILEnv
+from reinforcement_learning.RL_env import ILEnv
 from planning_sandbox.visualizer_class import Visualizer
 
 final_num_agents = 3

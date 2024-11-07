@@ -12,7 +12,7 @@ from planning_sandbox.benchmark_class import Benchmark
 
 from copy import deepcopy
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def run_sim(env: Environment, speed, visualize=True):
     
@@ -157,9 +157,9 @@ def run_benchmarks_on_environments(env,solve_types, iterations, num_agents, num_
 # Some plotting functions written by chatGPT (https://chatgpt.com/share/66f558b4-9844-8008-8442-3e9021b9bbbd)
 def main():
     
-    visualize = 1
-    iterations = 1
-    num_goals: int = 6
+    visualize = 0
+    iterations = 10
+    num_goals: int = 4
     num_agents: int = 3
     size: int = 100
     num_skills: int = 2
