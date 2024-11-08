@@ -11,4 +11,4 @@ RUN pip3 install -e .
 
 COPY . /app
 
-CMD ["python3", "/app/NeuralNetwork/dataset_generation.py"]
+CMD ["python3", "/app/graph_neural_network/graph_generator.py"]

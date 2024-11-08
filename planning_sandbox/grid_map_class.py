@@ -1,6 +1,6 @@
 import networkx as nx
 import numpy as np
-import time
+from noise import pnoise2
 import logging
 import os
 from PIL import Image
@@ -20,20 +20,16 @@ ORIGINAL_TOP_LEFT = (X_OFFSET, Y_OFFSET)
 ORIGINAL_BOTTOM_RIGHT = (X_OFFSET + WINDOW_SIZE, Y_OFFSET + WINDOW_SIZE)
 
 class GridMap:
-    def __init__(self, size, use_geo_data=False, flat_map_for_testing=False, downhill_slope_max=np.inf, uphill_slope_max=np.inf, uphill_factor=1):
-        
-        if flat_map_for_testing:
-            logging.warning("========= ATTENTION =========")
-            logging.warning("Using flat map for testing")
-            logging.warning("========= ATTENTION =========")
-            time.sleep(5)
-        
+    def __init__(self, size, use_geo_data=False, downhill_slope_max=np.inf, uphill_slope_max=np.inf, uphill_factor=1, random_map=False):
+    
         self.use_geo_data = use_geo_data
-        self.flat_map_for_testing = flat_map_for_testing
+        self.use_random_map = random_map
         
         self.downhill_slope_max = downhill_slope_max
         self.uphill_slope_max = uphill_slope_max
         self.uphill_factor = uphill_factor
+
+        self.seed = 0
 
         self.size = size
         self.graph = None
@@ -42,8 +38,11 @@ class GridMap:
 
         self.paths = {}
         
-        if self.use_geo_data and not self.flat_map_for_testing:
-            self.data = self._extract_data_from_tif()
+        if self.use_geo_data:
+            if self.use_random_map:
+                self.data = self._generate_random_map()
+            else:
+                self.data = self._extract_data_from_tif()
             self.downscaled_data, self.pixel_size = self._downscale_data()
         else:
             self.data = np.zeros((size, size))
@@ -54,6 +53,37 @@ class GridMap:
 
     def _random_position(self):
         return (np.random.randint(0, self.size), np.random.randint(0, self.size))
+    
+    # map generator function partially created by chatGPT (https://chatgpt.com/share/672ce6f8-bc90-8008-b221-ea49ba881e74)
+    def _generate_random_map(self):
+            map_size = self.size
+            scale = 100
+            octaves = 6
+            persistence = 0.5
+            lacunarity = 2.0
+
+            # Increment the seed slightly each time for new but consistent patterns
+            self.seed = np.random.randint(1, 2000)
+
+            x_offset = np.random.randint(0, 1000)
+            y_offset = np.random.randint(0, 1000)
+
+            terrain_map = np.zeros((map_size, map_size))
+            for i in range(map_size):
+                for j in range(map_size):
+                    height = pnoise2(
+                        (i + x_offset) / scale,
+                        (j + y_offset) / scale,
+                        octaves=octaves, 
+                        persistence=persistence, 
+                        lacunarity=lacunarity, 
+                        repeatx=map_size, 
+                        repeaty=map_size, 
+                        base=self.seed
+                    )
+                    terrain_map[i][j] = height
+
+            return terrain_map
     
     def _print_tif_info(self,file_path):
         logging.debug("TIFF File Information:")
@@ -155,9 +185,6 @@ class GridMap:
         self.graph = G
 
     def _calculate_weight(self, slope):
-        if self.flat_map_for_testing:
-            return MPP
-        
         if slope > 0:
             if slope > self.uphill_slope_max:
                 weight = np.inf
@@ -240,4 +267,3 @@ class GridMap:
     def assign_shortest_path_for_goal_to_agent(self, agent: Agent, goal: Goal):
         path = self.generate_shortest_path_for_agent(agent, goal) 
         self.paths[agent] = path
-    

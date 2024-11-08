@@ -10,3 +10,4 @@ saved_models
 *.egg-info
 *.h5
 *.png
+*.npy

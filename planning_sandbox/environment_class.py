@@ -1,5 +1,7 @@
 from typing import List, Dict
 import logging
+import networkx as nx
+import planning_sandbox.utils as utils
 
 from itertools import permutations, product, combinations
 
@@ -12,7 +14,7 @@ from planning_sandbox.benchmark_class import Benchmark
 import numpy as np
 
 class Environment:
-    def __init__(self, size, num_skills, num_agents = 1, num_goals = 1, use_geo_data=True, solve_type="optimal",replan_on_goal_claim=False, custom_agents: List[Agent] = None, custom_goals: List[Goal] = None, assume_lander=True):
+    def __init__(self, size, num_skills, num_agents = 1, num_goals = 1, use_geo_data=True, solve_type="optimal",replan_on_goal_claim=False, custom_agents: List[Agent] = None, custom_goals: List[Goal] = None, assume_lander=True, random_map=False):
         self.size = size
         self.solve_type = solve_type
         self.num_skills = num_skills
@@ -31,7 +33,7 @@ class Environment:
         self._initial_num_agents = num_agents if self.custom_agents is None else len(self.custom_agents)
         self._initial_num_goals = num_goals if self.custom_goals is None else len(self.custom_goals)
         
-        self.grid_map = GridMap(self.size, use_geo_data=use_geo_data)
+        self.grid_map = GridMap(self.size, use_geo_data=use_geo_data, random_map=random_map)
         self._starting_position = self.grid_map.random_valid_position()
         self._assume_lander = assume_lander
 
@@ -143,6 +145,7 @@ class Environment:
         self._initialize_skills()  
 
     def _connect_agents_and_goals(self):
+        logging.debug("Connecting agents and goals")
         inform_goals_of_agents_bench = Benchmark("inform_goals_of_agents", start_now=True, silent=True)
         for goal in self.scheduler.unclaimed_goals:
             for agent in self.agents:
@@ -162,6 +165,7 @@ class Environment:
             goal.generate_agent_combinations_which_solve_goal()
 
     def _inform_goals_of_costs_to_other_goals(self):
+        logging.debug("Informing goals of costs to other goals")
         inform_goals_of_costs_bench = Benchmark("_inform_goals_of_costs_to_other_goals", start_now=True, silent=True)
         for goal in self.scheduler.unclaimed_goals:
             for other_goal in self.goals:
@@ -375,7 +379,7 @@ class Environment:
             if agent in self.full_solution:
                 goal_list = self.full_solution[agent]
                 # Pad with -1 (or use `num_goals` as a dummy) if fewer than max_goals_per_agent
-                padded_goal_list = [self.goals.index(goal) for goal in goal_list] + [-1] * (len(self.goals) - len(goal_list))
+                padded_goal_list = [node_id_map[goal] for goal in goal_list] + [-1] * (len(self.goals) - len(goal_list))
                 action_vector.append(padded_goal_list)
             else:
                 # No goals, append `-1` for all slots
@@ -480,3 +484,106 @@ class Environment:
                     full_solution = proposed_solution
                     cheapest_cost = proposed_solution_cost
         return full_solution, cheapest_cost
+    
+    def get_observation_graph(self):
+        node_id_map = {}
+        i = 0
+        for agent in self.agents:
+            node_id_map[agent] = i
+            i += 1
+        for goal in self.goals:
+            node_id_map[goal] = i
+            i += 1
+
+        g = nx.Graph()
+        types = {
+            'goal': 0,
+            'agent': 1
+        }
+
+        for agent in self.agents:
+            g.add_node(node_id_map[agent], 
+            type=types["agent"], 
+            x=float(agent.position[0])/self.size, 
+            y=float(agent.position[1])/self.size,
+            skills=[1 if skill in agent.skills else 0 for skill in range(self.num_skills)]
+            )
+        for goal in self.goals:
+            g.add_node(node_id_map[goal], 
+            type=types["goal"], 
+            x=float(goal.position[0])/self.size, 
+            y=float(goal.position[1])/self.size,
+            skills=[1 if skill in goal.required_skills else 0 for skill in range(self.num_skills)]
+            )
+
+        for goal in self.goals:
+            for other_goal in self.goals:
+                if goal == other_goal:
+                    continue
+                g.add_edge(
+                    node_id_map[goal], 
+                    node_id_map[other_goal], 
+                    manhattan_distance=utils.manhattan_distance(start=goal.position, goal=other_goal.position),
+                    idx=0
+                    )
+            for agent in self.agents:
+                g.add_edge(
+                node_id_map[goal], 
+                node_id_map[agent], 
+                manhattan_distance=utils.manhattan_distance(start=goal.position, goal=agent.position), 
+                idx=0
+                )
+        for agent in self.agents:
+            for other_agent in self.agents:
+                if agent == other_agent:
+                    continue
+                g.add_edge(
+                    node_id_map[agent], 
+                    node_id_map[other_agent], 
+                    manhattan_distance=utils.manhattan_distance(start=agent.position, goal=other_agent.position),
+                    idx=0
+                    )
+        return g
+
+    def get_solution_graph(self):
+        node_id_map = {}
+
+        i = 0
+        for agent in self.agents:
+            node_id_map[agent] = i
+            i += 1
+        for goal in self.goals:
+            node_id_map[goal] = i
+            i += 1
+
+        g = nx.Graph()
+        types = {
+            'goal': 0,
+            'agent': 1
+        }
+
+        for agent in self.agents:
+            g.add_node(node_id_map[agent], 
+            type=types["agent"], 
+            x=float(agent.position[0])/self.size, 
+            y=float(agent.position[1])/self.size,
+            skills=[1 if skill in agent.skills else 0 for skill in range(self.num_skills)]
+            )
+        for goal in self.goals:
+            g.add_node(node_id_map[goal], 
+            type=types["goal"], 
+            x=float(goal.position[0])/self.size, 
+            y=float(goal.position[1])/self.size,
+            skills=[1 if skill in goal.required_skills else 0 for skill in range(self.num_skills)]
+            )
+
+        for agent, goals in self.full_solution.items():
+            assert self.full_solution is not None, "No solution found"
+            for i, goal in enumerate(goals):
+                g.add_edge(
+                    node_id_map[agent],
+                    node_id_map[goal], 
+                    manhattan_distance=utils.manhattan_distance(start=agent.position, goal=goal.position),
+                    idx=i
+                    )
+        return g
