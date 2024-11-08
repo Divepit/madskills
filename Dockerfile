@@ -7,6 +7,7 @@ COPY requirements.txt /app/
 COPY setup.py /app/
 COPY README.md /app/
 
+RUN sudo apt-get install gcc
 RUN pip3 install -e .
 
 COPY . /app
