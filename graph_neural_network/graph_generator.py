@@ -20,22 +20,28 @@ except FileNotFoundError:
     data_objects = []
 
 os.makedirs(os.path.dirname(file_path), exist_ok=True)
+env = None
 
 
 
 while True:
     try:
-        print(f"Generating map {len(data_objects)+1}...", end='\r')
+        print(f"Generating graph {len(data_objects)+1}...", end='\r')
+        
         size = 32
         num_skills = 2 # can not change for now
         num_agents= np.random.randint(2, 4)
-        num_goals= np.random.randint(3, 6)
+        num_goals=np.random.randint(3, 6)
         use_geo_data= False, # can not change for now
         assume_lander= False,
         random_map= False # can not change for now
 
-
-        env = Environment(size=size, num_skills=num_skills, num_agents=num_agents, num_goals=num_goals, use_geo_data=use_geo_data, assume_lander=assume_lander, random_map=random_map)
+        if (use_geo_data and random_map) or not env:
+            env = Environment(size=size, num_skills=num_skills, num_agents=num_agents, num_goals=num_goals, use_geo_data=use_geo_data, assume_lander=assume_lander, random_map=random_map)
+        else:
+            env._initial_num_goals = num_goals
+            env._initial_num_agents = num_agents
+            env.reset()
 
         observation_graph = env.get_observation_graph() # nx graph
 
@@ -66,6 +72,12 @@ while True:
             attrs.append(edge[2]['manhattan_distance'])
             edge_attr.append(attrs)
 
+        for edge in observation_graph.edges():
+            if edge in solution_graph.edges():
+                y.append(solution_graph.edges[edge]['idx'])
+            else:
+                y.append(0)
+    
         for edge in solution_graph.edges(data=True):
             attrs = []
             edge_index_y[0].append(edge[0])
@@ -80,9 +92,8 @@ while True:
         edge_index_y = torch.tensor(edge_index_y, dtype=torch.long)
         
         x = torch.tensor(features, dtype=torch.float)
-        y = edge_index_y
 
-        data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y, edge_attr_y=edge_attr_y)
+        data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y, edge_index_y=edge_index_y, edge_attr_y=edge_attr_y)
 
         data_objects.append(data)
 
@@ -94,7 +105,7 @@ while True:
             os.makedirs(dataset_path, exist_ok=True)
             dataset = MyDataset(root=dataset_path, data_list=data_objects)
             dataset.process()
-            print("Dataset saved successfully.")
+            print("\nDataset saved successfully.")
 
         # compare_observation_and_solution_graph(observation_graph, solution_graph)
 
