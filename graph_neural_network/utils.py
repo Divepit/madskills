@@ -2,7 +2,7 @@ from torch_geometric.data import InMemoryDataset
 class MyDataset(InMemoryDataset):
     def __init__(self, root, data_list=None, transform=None):
         self.data_list = data_list
-        super().__init__(root, transform)
+        super(MyDataset,self).__init__(root, transform)
         self.load(self.processed_paths[0])
 
     @property

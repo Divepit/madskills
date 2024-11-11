@@ -21,6 +21,8 @@ class Environment:
         self.replan_on_goal_claim = replan_on_goal_claim
         self.deadlocked = False
 
+        self.node_id_map = {}
+
         self.custom_goals = custom_goals
         self.custom_agents = custom_agents
         self.goals: List[Goal] = [] if self.custom_goals is None else self.custom_goals
@@ -501,6 +503,8 @@ class Environment:
             'agent': 1
         }
 
+        self.node_id_map = node_id_map
+
         for agent in self.agents:
             g.add_node(node_id_map[agent], 
             type=types["agent"], 
@@ -561,6 +565,8 @@ class Environment:
             'goal': 0,
             'agent': 1
         }
+
+        self.node_id_map = node_id_map
 
         for agent in self.agents:
             g.add_node(node_id_map[agent], 

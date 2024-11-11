@@ -45,6 +45,8 @@ while True:
         edge_index = [[],[]]
         edge_attr = []
         y = []
+        edge_index_y = [[],[]]
+        edge_attr_y = []
 
         for node in observation_graph.nodes(data=True):
             node_features = []
@@ -62,20 +64,23 @@ while True:
             attrs.append(edge[2]['manhattan_distance'])
             edge_attr.append(attrs)
 
-        for node in solution_graph.nodes(data=True):
-            node_features = []
-            node_features.append(node[1]['type'])
-            node_features.append(node[1]['x'])
-            node_features.append(node[1]['y'])
-            node_features.extend(node[1]['skills'])
-            y.append(node_features)
+        for edge in solution_graph.edges(data=True):
+            attrs = []
+            edge_index_y[0].append(edge[0])
+            edge_index_y[1].append(edge[1])
+            attrs.append(edge[2]['idx'])
+            attrs.append(edge[2]['manhattan_distance'])
+            edge_attr_y.append(attrs)
 
-        x = torch.tensor(features, dtype=torch.float)
         edge_index = torch.tensor(edge_index, dtype=torch.long)
         edge_attr = torch.tensor(edge_attr, dtype=torch.float)
-        y = torch.tensor(y, dtype=torch.float)
+        edge_attr_y = torch.tensor(edge_attr_y, dtype=torch.float)
+        edge_index_y = torch.tensor(edge_index_y, dtype=torch.long)
+        
+        x = torch.tensor(features, dtype=torch.float)
+        y = edge_index_y
 
-        data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
+        data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y, edge_attr_y=edge_attr_y)
 
         data_objects.append(data)
 
