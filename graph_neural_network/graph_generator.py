@@ -87,9 +87,9 @@ while True:
         data_objects.append(data)
 
         if len(data_objects) % save_interval == 0:
-            # print("\nSaving data to 'data_objects.pt'...")
-            # torch.save(data_objects, file_path)
-            # print(f"Saved {len(data_objects)} data objects.")
+            print("\nSaving data to 'data_objects.pt'...")
+            torch.save(data_objects, file_path)
+            print(f"Saved {len(data_objects)} data objects.")
             print(f"Saving dataset to '{dataset_path}'...")
             os.makedirs(dataset_path, exist_ok=True)
             dataset = MyDataset(root=dataset_path, data_list=data_objects)
