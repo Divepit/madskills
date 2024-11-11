@@ -241,7 +241,13 @@ class Environment:
 
         self.scheduler.reset()
 
-    def reset(self):
+    def reset(self, num_agents=None, num_goals=None):
+        if num_agents is not None:
+            assert self.custom_agents is None, "Cannot change number of agents in custom agent mode"
+            self._initial_num_agents = num_agents
+        if num_goals is not None:
+            assert self.custom_goals is None, "Cannot change number of goals in custom goal mode"
+            self._initial_num_goals = num_goals
         self.initialised = False
         self.deadlocked = False
         self.agents_goals_connected = False

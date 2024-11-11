@@ -39,9 +39,7 @@ while True:
         if (use_geo_data and random_map) or not env:
             env = Environment(size=size, num_skills=num_skills, num_agents=num_agents, num_goals=num_goals, use_geo_data=use_geo_data, assume_lander=assume_lander, random_map=random_map)
         else:
-            env._initial_num_goals = num_goals
-            env._initial_num_agents = num_agents
-            env.reset()
+            env.reset(num_agents=num_agents, num_goals=num_goals)
 
         observation_graph = env.get_observation_graph() # nx graph
 
