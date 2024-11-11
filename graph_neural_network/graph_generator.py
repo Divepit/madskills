@@ -5,6 +5,8 @@ from planning_sandbox.environment_class import Environment
 from torch_geometric.data import Data
 from utils import MyDataset, compare_observation_and_solution_graph
 
+print("[Version check]: v1")
+
 save_interval = 10
 current_directory = os.path.dirname(os.path.abspath(__file__))
 file_path = os.path.join(current_directory, 'graphs', 'data_objects_2sk.npy')
