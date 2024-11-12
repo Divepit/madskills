@@ -387,7 +387,7 @@ class Environment:
             if agent in self.full_solution:
                 goal_list = self.full_solution[agent]
                 # Pad with -1 (or use `num_goals` as a dummy) if fewer than max_goals_per_agent
-                padded_goal_list = [node_id_map[goal] for goal in goal_list] + [-1] * (len(self.goals) - len(goal_list))
+                padded_goal_list = [self.goals.index(goal) for goal in goal_list] + [-1] * (len(self.goals) - len(goal_list))
                 action_vector.append(padded_goal_list)
             else:
                 # No goals, append `-1` for all slots

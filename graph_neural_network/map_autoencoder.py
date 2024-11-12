@@ -85,8 +85,8 @@ encoded_imgs = autoencoder.encoder(x_test).numpy()
 decoded_imgs = autoencoder.decoder(encoded_imgs).numpy()
 
 
-n = 10
-plt.figure(figsize=(20, 4))
+n = 5
+plt.figure(figsize=(20, 8))
 for i in range(n):
   # display original
   ax = plt.subplot(2, n, i + 1)

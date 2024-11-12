@@ -88,6 +88,7 @@ while True:
         edge_attr = torch.tensor(edge_attr, dtype=torch.float)
         edge_attr_y = torch.tensor(edge_attr_y, dtype=torch.float)
         edge_index_y = torch.tensor(edge_index_y, dtype=torch.long)
+        y = torch.tensor(y, dtype=torch.float)
         
         x = torch.tensor(features, dtype=torch.float)
 

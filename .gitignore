@@ -11,3 +11,4 @@ saved_models
 *.h5
 *.png
 *.npy
+*.npy_backup

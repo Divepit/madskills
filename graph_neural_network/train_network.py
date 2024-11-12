@@ -1,127 +1,171 @@
+# %% Import our Data
+import logging
+logging.basicConfig(level=logging.INFO)
+logging.info('Importing Dataset')
+
 import os
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch_geometric.data import Data, DataLoader
-from torch_geometric.nn import GCNConv
-from torch_geometric.explain import Explainer, GNNExplainer
-from utils import MyDataset  # Assuming 'utils.py' contains your dataset class
+import torch.utils
+import torch.utils.data
+from utils import MyDataset
 
-# Set up the dataset path and load it
 current_directory = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(current_directory, 'graphs', 'data_objects_2sk.npy')
 dataset_path = os.path.join(current_directory, 'graphs', 'dataset_2sk.npy')
-dataset = MyDataset(root=dataset_path)
-loader = DataLoader(dataset, batch_size=32, shuffle=True)
-
-print(f"Dataset size: {len(dataset)}")
-example = dataset[0]
-example.validate(raise_on_error=True)
-print("Sample Graph Data:", example)
-print("Node Features:", example['x'])
-print("Edge Index:", example['edge_index'])
+dataset = MyDataset(root=dataset_path) # Contains areound 37000 PyG Data objects
 
 
-class LinkPredictionAndRegressionModel(nn.Module):
-    def __init__(self, in_channels, hidden_channels):
+# %% Set up device
+logging.info('Setting up device')
+
+if torch.cuda.is_available():
+    device = torch.device('cuda')
+# elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+#     device = torch.device('mps')
+else:
+    device = torch.device('cpu')
+
+logging.info(f"Using device: {device}")
+
+# %% Split the Data into Training and Testing Sets
+logging.info('Splitting the data into training and testing sets')
+
+import torch
+from torch_geometric.loader import DataLoader
+
+train_split = 0.6
+test_split = 0.2
+val_split = 0.2
+
+train_size = int(train_split * len(dataset))
+test_size = int(test_split * len(dataset))
+val_size = len(dataset) - train_size - test_size
+
+train_dataset, test_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, test_size, val_size])
+
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+
+# %% Create the Graph Neural Network with GCN Layers
+logging.info('Creating the Graph Neural Network')
+
+from torch_geometric.nn import GCNConv
+import torch.nn.functional as F
+
+class Net(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels):
         super().__init__()
-        # Shared GNN layers
         self.conv1 = GCNConv(in_channels, hidden_channels)
-        self.conv2 = GCNConv(hidden_channels, hidden_channels)
+        self.conv2 = GCNConv(hidden_channels, out_channels)
 
-        # Output head for link prediction (classification)
-        self.link_pred_head = nn.Sequential(
-            nn.Linear(2 * hidden_channels, hidden_channels),
-            nn.ReLU(),
-            nn.Linear(hidden_channels, 1),
-            nn.Sigmoid()  # Output: probability (0 to 1)
-        )
-        
-        # Output head for link regression (predicting 'idx')
-        self.link_reg_head = nn.Sequential(
-            nn.Linear(2 * hidden_channels, hidden_channels),
-            nn.ReLU(),
-            nn.Linear(hidden_channels, 1)  # Output: continuous value for 'idx'
-        )
+    def encode(self, x, edge_index):
+        x = self.conv1(x, edge_index).relu()
+        return self.conv2(x, edge_index)
 
-    def forward(self, x, edge_index):
-        # Forward pass through GNN layers
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
+    def decode(self, z, edge_index):
+        scores = (z[edge_index[0]] * z[edge_index[1]]).sum(dim=-1)
+        return scores
 
-        # Generate edge embeddings
-        def get_edge_embeddings(edge_index, node_embeddings):
-            src, dst = edge_index
-            edge_features = torch.cat([node_embeddings[src], node_embeddings[dst]], dim=-1)
-            return edge_features
+    def decode_all(self, z):
+        prob_adj = z @ z.t()
+        return (prob_adj > 0).nonzero(as_tuple=False).t()
 
-        edge_embeddings = get_edge_embeddings(edge_index, x)
+# %% Create the Loss Function
+logging.info('Creating the loss function')
 
-        # Link prediction (classification)
-        link_pred = self.link_pred_head(edge_embeddings)
+model = Net(dataset[0].x.size(1), 16, 8).to(device)
+optimizer = torch.optim.Adam(params=model.parameters(), lr=0.01)
+criterion = torch.nn.BCEWithLogitsLoss()
 
-        # Link regression (predicting 'idx')
-        link_reg = self.link_reg_head(edge_embeddings)
+# %% Define training loop with accuracy computation
+logging.info('Defining the training loop')
 
-        return link_pred, link_reg
-    
+from torch_geometric.utils import negative_sampling
+from sklearn.metrics import roc_auc_score
+from torch_geometric.utils import to_undirected
 
-# Hyperparameters
-in_channels = dataset[0].x.shape[1]
-hidden_channels = 32
-num_epochs = 10
-alpha = 0.5  # Weight for link prediction loss
-beta = 0.5   # Weight for link regression loss
-
-# Initialize model, optimizer, and loss functions
-model = LinkPredictionAndRegressionModel(in_channels, hidden_channels)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-
-# Create a DataLoader
-loader = DataLoader(dataset, batch_size=32, shuffle=True)
-
-# Training loop
-for epoch in range(num_epochs):
+def train():
     model.train()
     total_loss = 0
+    total_correct = 0
+    total_examples = 0
 
-    for data in loader:
+    for data in train_loader:
         optimizer.zero_grad()
-        x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
+        data = data.to(device)
 
-        # Forward pass
-        link_pred, link_reg = model(x, edge_index)
+        # Encode node features using the fully connected graph
+        z = model.encode(data.x, data.edge_index)
 
-        # Extract the ground truth for link prediction and regression
-        true_labels = torch.ones(edge_index.shape[1], 1, device=x.device)  # Assuming all edges in edge_index are positive
-        true_weights = edge_attr[:, 0].view(-1, 1)  # Assuming the first attribute is 'idx'
+        # Create labels: 1 if the edge exists in edge_index_y, 0 otherwise
+        y = torch.tensor(data.y, dtype=torch.float).dim.float().to(device)
 
-        # Compute link prediction loss (binary cross-entropy)
-        link_pred_loss = F.binary_cross_entropy(link_pred, true_labels)
+        # Decode the fully connected edges
+        pred = model.decode(z, data.edge_index).view(-1)
 
-        # Compute link regression loss (mean squared error)
-        link_reg_loss = F.mse_loss(link_reg, true_weights)
-
-        # Combine the losses
-        loss = alpha * link_pred_loss + beta * link_reg_loss
-        total_loss += loss.item()
-
-        # Backpropagation
+        # Calculate loss
+        loss = criterion(pred, y)
         loss.backward()
         optimizer.step()
-    
-    print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {total_loss:.4f}")
 
-print("Training complete!")
+        total_loss += loss.item()
 
-model.eval()
-with torch.no_grad():
-    for i, data in enumerate(dataset[:5]):
-        x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
-        link_pred, link_reg = model(x, edge_index)
+        # Compute accuracy
+        pred_prob = torch.sigmoid(pred)
+        pred_label = (pred_prob > 0.5).float()
+        correct = pred_label.eq(y).sum().item()
+        total_correct += correct
+        total_examples += y.size(0)
 
-        print(f"Sample {i + 1}")
-        print("Predicted Link Existence:", link_pred.round())
-        print("Predicted Weights (idx):", link_reg)
-        print("True Weights (idx):", edge_attr[:, 0])
-        print()
+    acc = total_correct / total_examples
+    return total_loss / len(train_loader), acc
+
+# %% Define evaluation function
+def evaluate(loader):
+    model.eval()
+    total_loss = 0
+    total_correct = 0
+    total_examples = 0
+    y_true = []
+    y_pred = []
+
+    with torch.no_grad():
+        for data in loader:
+            data = data.to(device)
+            z = model.encode(data.x, data.edge_index)
+
+            y = torch.tensor(data.y, dtype=torch.float).float().to(device)
+
+            # Decode the fully connected edges
+            pred = model.decode(z, data.edge_index).view(-1)
+            loss = criterion(pred, y)
+            total_loss += loss.item()
+
+            # Compute accuracy
+            pred_prob = torch.sigmoid(pred)
+            pred_label = (pred_prob > 0.5).float()
+            correct = pred_label.eq(y).sum().item()
+            total_correct += correct
+            total_examples += y.size(0)
+
+            y_true.append(y.cpu())
+            y_pred.append(pred_prob.cpu())
+
+    acc = total_correct / total_examples
+    avg_loss = total_loss / len(loader)
+    y_true = torch.cat(y_true)
+    y_pred = torch.cat(y_pred)
+    auc = roc_auc_score(y_true.numpy(), y_pred.numpy())
+
+    return avg_loss, acc, auc
+
+# %% Train the model with accuracy tracking
+logging.info('Training the model')
+
+for epoch in range(1, 30):
+    loss, train_acc = train()
+    val_loss, val_acc, val_auc = evaluate(val_loader)
+    print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, Train Acc: {train_acc:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}, Val AUC: {val_auc:.4f}')
+
+# %% Save the model
+torch.save(model, current_directory+'/model.pth')
