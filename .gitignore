@@ -12,3 +12,4 @@ saved_models
 *.png
 *.npy
 *.npy_backup
+*.pth
