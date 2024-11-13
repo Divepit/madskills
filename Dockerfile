@@ -13,4 +13,4 @@ RUN pip3 install -e .
 
 COPY . /app
 
-CMD ["python3", "/app/graph_neural_network/graph_generator.py"]
+CMD ["python3", "/app/mlp_neural_network/generate_labelled_data.py"]

@@ -155,7 +155,7 @@ metrics = ['mae', rounded_accuracy]
 
 model.compile(loss=loss, optimizer=optim, metrics=metrics)
 
-batch_size = 4500
+batch_size = 8
 epochs = 1000
 
 history = model.fit(X, y, epochs=epochs, batch_size=batch_size, shuffle=True, verbose=1, callbacks=[early_stopping, reduce_lr, tensorboard_callback], validation_split=0.2)
