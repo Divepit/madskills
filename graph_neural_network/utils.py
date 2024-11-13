@@ -25,4 +25,4 @@ def compare_observation_and_solution_graph(observation_graph, solution_graph):
     plt.title("Solution Graph")
     colors = ['blue' if solution_graph.nodes[node]['type'] == 1 else 'red' for node in solution_graph.nodes]
     nx.draw(solution_graph, with_labels=True, node_color=colors)
-    plt.show()
+    plt.show(block=False)

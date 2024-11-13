@@ -73,16 +73,14 @@ class Net(torch.nn.Module):
 # %% Create the Loss Function
 logging.info('Creating the loss function')
 
-model = Net(dataset[0].x.size(1), 16, 8).to(device)
+model = Net(dataset[0].x.size(1), 128, 64).to(device)
 optimizer = torch.optim.Adam(params=model.parameters(), lr=0.01)
 criterion = torch.nn.BCEWithLogitsLoss()
 
 # %% Define training loop with accuracy computation
 logging.info('Defining the training loop')
 
-from torch_geometric.utils import negative_sampling
 from sklearn.metrics import roc_auc_score
-from torch_geometric.utils import to_undirected
 
 def train():
     model.train()
@@ -98,7 +96,7 @@ def train():
         z = model.encode(data.x, data.edge_index)
 
         # Create labels: 1 if the edge exists in edge_index_y, 0 otherwise
-        y = torch.tensor(data.y, dtype=torch.float).dim.float().to(device)
+        y = torch.tensor([1 if el > 0 else 0 for el in data.y], dtype=torch.float).to(device)
 
         # Decode the fully connected edges
         pred = model.decode(z, data.edge_index).view(-1)
@@ -134,7 +132,7 @@ def evaluate(loader):
             data = data.to(device)
             z = model.encode(data.x, data.edge_index)
 
-            y = torch.tensor(data.y, dtype=torch.float).float().to(device)
+            y = torch.tensor([1 if el > 0 else 0 for el in data.y], dtype=torch.float).to(device)
 
             # Decode the fully connected edges
             pred = model.decode(z, data.edge_index).view(-1)

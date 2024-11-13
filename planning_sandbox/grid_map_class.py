@@ -221,6 +221,10 @@ class GridMap:
     
     def reset(self):
         self.paths.clear()
+        if self.use_geo_data and self.use_random_map:
+            self.data = self._generate_random_map()
+            self.downscaled_data, self.pixel_size = self._downscale_data()
+            self._create_directed_graph(data=self.downscaled_data, pixel_size=self.pixel_size, uphill_factor=self.uphill_factor, downhill_slope_max=self.downhill_slope_max, uphill_slope_max=self.uphill_slope_max)
     
     def random_valid_position(self):
         pos = self._random_position()

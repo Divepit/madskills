@@ -5,7 +5,6 @@ import tensorflow as tf
 import keras
 
 # Parameters
-amount_of_maps = 10000
 current_directory = os.path.dirname(os.path.abspath(__file__))
 file_path = os.path.join(current_directory, 'maps', 'random_maps_64.npy')  # Path to save the map data
 save_frequency = 100  # Save progress every 100 maps
@@ -42,7 +41,7 @@ x_train, x_test = data[:split_index], data[split_index:]
 print("Training set shape:", x_train.shape)
 print("Testing set shape:", x_test.shape)
 
-
+@keras.saving.register_keras_serializable()
 class Autoencoder(keras.Model):
     def __init__(self, latent_dim, shape):
         super(Autoencoder, self).__init__()
@@ -69,6 +68,18 @@ class Autoencoder(keras.Model):
         decoded = self.decoder(encoded)
         return decoded
 
+    def get_config(self):
+        # Return the configuration of the model to enable deserialization
+        return {
+            'latent_dim': self.latent_dim,
+            'shape': self.shape
+        }
+
+    @classmethod
+    def from_config(cls, config):
+        # Create a new instance from the config dictionary
+        return cls(**config)
+
 
 shape = x_test.shape[1:]
 latent_dim = 8
@@ -84,6 +95,7 @@ autoencoder.fit(x_train, x_train,
 encoded_imgs = autoencoder.encoder(x_test).numpy()
 decoded_imgs = autoencoder.decoder(encoded_imgs).numpy()
 
+autoencoder.save(current_directory + '/autoencoder.keras')
 
 n = 5
 plt.figure(figsize=(20, 8))
