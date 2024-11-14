@@ -38,7 +38,7 @@ model.eval()
 logging.info('Generating Environment')
 
 import numpy as np
-from planning_sandbox.environment_class import Environment
+from madskills.environment_class import Environment
 
 size = 32
 num_skills = 2 # can not change for now

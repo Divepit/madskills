@@ -6,8 +6,8 @@ import keras
 import numpy as np
 import logging
 import matplotlib.pyplot as plt  # Added for plotting
-from planning_sandbox.environment.environment_class import Environment
-from planning_sandbox.environment.visualizer_class import Visualizer
+from madskills.environment.environment_class import Environment
+from madskills.environment.visualizer_class import Visualizer
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -74,7 +74,7 @@ def rounded_accuracy(y_true, y_pred):
     return tf.reduce_mean(correct_predictions)
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
-model = keras.models.load_model(current_directory+'/model.keras')
+model = keras.models.load_model(current_directory+'/good_3a_5g_2sk_100x100_27min.keras')
 autoencoder = keras.models.load_model(current_directory+'/autoencoder.keras')
 
 # model = keras.models.load_model(current_directory+'/model.keras')
@@ -85,8 +85,8 @@ num_goals = 5
 num_skills = 2
 size = 64
 use_geo_data = True
-random_map = True
-assume_lander = False
+random_map = False
+assume_lander = True
 
 # Create environment (needed for input generation and visualization)
 env = Environment(size=size, num_agents=num_agents, num_goals=num_goals,

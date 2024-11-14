@@ -1,7 +1,7 @@
 import logging
 
-from planning_sandbox.environment.environment_class import Environment
-from planning_sandbox.environment.visualizer_class import Visualizer
+from madskills.environment.environment_class import Environment
+from madskills.environment.visualizer_class import Visualizer
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 

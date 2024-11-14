@@ -1,4 +1,5 @@
-# Multi-Agent Planning and Reinforcement Learning Environment
+# MADSKILLS
+## **M**ulti **A**gent **D**ecision making with **SKILLS**
 
 ## Overview
 
@@ -34,7 +35,7 @@ This project implements a multi-agent planning and reinforcement learning enviro
 
 ## Project Structure
 
-- `planning_sandbox/`: Core environment classes and utilities
+- `madskills/`: Core environment classes and utilities
   - `maps/`:
     - contains a couple of different elevation maps that can be used for the environments
   - `environment_class.py`: Main environment implementation

@@ -1,6 +1,6 @@
 # %% Train Network
 import os
-from planning_sandbox.machine_learning.mlp_solver.mlp_trainer_class import MlpTrainer
+from madskills.machine_learning.mlp_solver.mlp_trainer_class import MlpTrainer
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 dataset_path = current_directory + '/datasets/dataset_3a_5g_random_maps.h5'

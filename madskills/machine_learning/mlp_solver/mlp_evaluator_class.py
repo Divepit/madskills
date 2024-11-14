@@ -4,12 +4,12 @@ import tensorflow as tf
 import random
 import matplotlib.pyplot as plt
 import numpy as np
-from planning_sandbox.environment.environment_class import Environment
-from planning_sandbox.environment.visualizer_class import Visualizer
+from madskills.environment.environment_class import Environment
+from madskills.environment.visualizer_class import Visualizer
 from utils import generate_mlp_input_from_env
 
 class MlpEvaluator():
-    def __init__(self,model=None, model_path=None, autoencoder_path=None,env: Environment=None):
+    def __init__(self,model=None, model_path=None, autoencoder_path=None,env: Environment=None,plots_directory=None):
         assert model is not None or model_path is not None, "Either provide model or model_path"
         if model is not None:
             self.model = model
@@ -22,8 +22,11 @@ class MlpEvaluator():
             self.autoencoder = None
 
         self.env = env
+        self.plots_directory = plots_directory
     
     def encode_map(self,env=None):
+        if self.autoencoder is None:
+            return np.array([])
         if env is None:
             env = self.env
         return self.autoencoder.encoder(np.array([self.env.grid_map.downscaled_data]).astype(np.float32))[0]
@@ -53,8 +56,10 @@ class MlpEvaluator():
                 failed_attempts += 1
                 random.shuffle(self.env.goals)
     
-    def perform_comparison_to_optimal_solver(self, runs):
+    def perform_comparison_to_optimal_solver(self, runs, visualize=False):
         assert self.env is not None, "Environment for optimal solving is not provided"
+        if visualize:
+            vis = Visualizer(self.env, speed=50)
         runs = runs
         successes = []
         optimal_costs = []
@@ -72,14 +77,14 @@ class MlpEvaluator():
             self.env.reset()
             map = self.encode_map(self.env)
             solved = False
-            optmial_found = False
+            optimal_found = False
             while not solved:
                 # print("Input Array:", input_array)
 
-                if not optmial_found:
-                    optmial_found = True
+                if not optimal_found:
+                    optimal_found = True
                     opt_start = time.perf_counter_ns()
-                    optimal_solution, new_opt_cost = self.env.find_numerical_solution(solve_type='optimal')
+                    self.env.find_numerical_solution(solve_type='optimal')
                     opt_end = time.perf_counter_ns()
                     self.env.solve_full_solution(fast=False, soft_reset=True)
                     opt_cost = self.env.get_agent_benchmarks()[2]
@@ -96,7 +101,11 @@ class MlpEvaluator():
                 predictions = predictions.numpy().astype(int)
                 full_solution = self.env.get_full_solution_from_action_vector(predictions)
                 self.env.full_solution = full_solution
-                self.env.solve_full_solution(fast=False, soft_reset=False)
+                if visualize:
+                    vis.visualise_full_solution(soft_reset=False)
+                else:
+                    self.env.solve_full_solution(fast=False, soft_reset=False)
+                
                 pred_cost = self.env.get_agent_benchmarks()[2]
                 
                 if self.env.scheduler.all_goals_claimed():
@@ -161,7 +170,7 @@ class MlpEvaluator():
             'legend.fontsize': 20,  # Legend font size
         })
 
-        env_params = f'Agents: {self.env.num_agents}, Goals: {self.env.num_goals}, Skills: {self.env.num_skills}, Size: {self.env.size}, Runs: {runs}'
+        env_params = f'Agents: {len(self.env.agents)}, Goals: {len(self.env.goals)}, Skills: {self.env.num_skills}, Size: {self.env.size}, Runs: {runs}'
 
         # 1. Bar Chart of Mean Computation Times
         plt.figure()
@@ -171,7 +180,7 @@ class MlpEvaluator():
         plt.title('Mean Computation Times')
         plt.ylabel('Time (ms)')
         plt.text(0.5, max(times)*0.9, env_params, ha='center', fontsize=12)
-        plt.savefig('mean_computation_times.png')
+        plt.savefig(self.plots_directory+'/mean_computation_times.png')
         plt.close()
         print("Saved 'mean_computation_times.png'.")
 
@@ -181,7 +190,7 @@ class MlpEvaluator():
         plt.title('Cost Difference Between NN Model and Expert Solution')
         plt.xlabel('Cost Difference (NN Model Cost - Expert Cost)')
         plt.text(np.mean(cost_diff), 1.05, env_params, ha='center', fontsize=12)
-        plt.savefig('cost_difference_boxplot.png')
+        plt.savefig(self.plots_directory+'/cost_difference_boxplot.png')
         plt.close()
         print("Saved 'cost_difference_boxplot.png'.")
 
@@ -193,7 +202,7 @@ class MlpEvaluator():
         plt.title('Mean Costs')
         plt.ylabel('Total Cost (units)')
         plt.text(0.5, max(costs)*0.9, env_params, ha='center', fontsize=12)
-        plt.savefig('mean_costs.png')
+        plt.savefig(self.plots_directory+'/mean_costs.png')
         plt.close()
         print("Saved 'mean_costs.png'.")
 
@@ -206,6 +215,6 @@ class MlpEvaluator():
         plt.axhline(0, color='grey', linestyle='--', linewidth=1)
         plt.axvline(0, color='grey', linestyle='--', linewidth=1)
         plt.text(0.5, max(time_diff)*0.9, env_params, ha='center', fontsize=12)
-        plt.savefig('time_vs_cost_difference.png')
+        plt.savefig(self.plots_directory+'/time_vs_cost_difference.png')
         plt.close()
         print("Saved 'time_vs_cost_difference.png'.")

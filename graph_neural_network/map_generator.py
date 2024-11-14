@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from planning_sandbox.environment.grid_map_class import GridMap
+from madskills.environment.grid_map_class import GridMap
 
 # Parameters
 amount_of_maps = 10000

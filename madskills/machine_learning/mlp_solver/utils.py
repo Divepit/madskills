@@ -2,7 +2,7 @@ from skimage.transform import resize
 import tensorflow as tf
 import numpy as np
 import keras
-from planning_sandbox.environment.environment_class import Environment
+from madskills.environment.environment_class import Environment
 
 def downscale_data(data, map_size, mpp=5):
 

@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import torch
-from planning_sandbox.environment.environment_class import Environment
+from madskills.environment.environment_class import Environment
 from torch_geometric.data import Data
 from utils import MyDataset, compare_observation_and_solution_graph
 

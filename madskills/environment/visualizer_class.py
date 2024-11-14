@@ -3,7 +3,7 @@ import pygame
 import logging
 import numpy as np
 
-from planning_sandbox.environment.environment_class import Environment
+from madskills.environment.environment_class import Environment
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm

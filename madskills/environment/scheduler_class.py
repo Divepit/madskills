@@ -1,8 +1,8 @@
 import logging
 
 from typing import List, Dict
-from planning_sandbox.environment.agent_class import Agent
-from planning_sandbox.environment.goal_class import Goal
+from madskills.environment.agent_class import Agent
+from madskills.environment.goal_class import Goal
 
 class Scheduler:
     def __init__(self, agents, goals):

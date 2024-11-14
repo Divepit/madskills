@@ -3,11 +3,11 @@ import h5py
 import numpy as np
 import keras
 
-from planning_sandbox.machine_learning.mlp_solver.utils import downscale_data
-from planning_sandbox.machine_learning.mlp_solver.autoencoder_class import Autoencoder
-from planning_sandbox.machine_learning.mlp_solver.mlp_network_class import MlpNetwork
+from madskills.machine_learning.mlp_solver.utils import downscale_data
+from madskills.machine_learning.mlp_solver.autoencoder_class import Autoencoder
+from madskills.machine_learning.mlp_solver.mlp_network_class import MlpNetwork
 from keras_tuner import RandomSearch
-from planning_sandbox.environment.environment_class import Environment
+from madskills.environment.environment_class import Environment
 
 
 class MlpTrainer:

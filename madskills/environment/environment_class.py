@@ -1,15 +1,15 @@
 from typing import List, Dict
 import logging
 import networkx as nx
-import planning_sandbox.utils as utils
+import madskills.utils as utils
 
 from itertools import permutations, product, combinations
 
-from planning_sandbox.environment.grid_map_class import GridMap
-from planning_sandbox.environment.agent_class import Agent
-from planning_sandbox.environment.goal_class import Goal
-from planning_sandbox.environment.scheduler_class import Scheduler
-from planning_sandbox.environment.benchmark_class import Benchmark
+from madskills.environment.grid_map_class import GridMap
+from madskills.environment.agent_class import Agent
+from madskills.environment.goal_class import Goal
+from madskills.environment.scheduler_class import Scheduler
+from madskills.environment.benchmark_class import Benchmark
 
 import numpy as np
 
@@ -232,7 +232,7 @@ class Environment:
     def soft_reset(self):
         logging.debug("Soft resetting environment")
         self.deadlocked = False
-        self.grid_map.reset()
+        self.grid_map.soft_reset()
         for goal in self.goals:
             goal.soft_reset()
 
