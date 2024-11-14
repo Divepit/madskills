@@ -6,6 +6,7 @@ import keras
 from matplotlib import pyplot as plt
 from datetime import datetime
 from skimage.transform import resize
+from keras_tuner import RandomSearch
 
 @keras.saving.register_keras_serializable()
 class Autoencoder(keras.Model):
@@ -91,90 +92,84 @@ X = np.array(new_X).astype(np.float32)
     
 
 
-nodes = 4096
-dropout = 0.15
-learning_rate = 0.00021
-slope = 0.3
+# Define a function to build the model with tunable hyperparameters
+def build_model(hp):
+    nodes = hp.Int('nodes', min_value=64, max_value=4096, step=64)
+    dropout = hp.Float('dropout', min_value=0, max_value=0.5, step=0.05)
+    learning_rate = hp.Float('learning_rate', min_value=0.00001, max_value=0.001, sampling='log')
+    slope = hp.Float('slope', min_value=0, max_value=0.5, step=0.05)
+    
+    model = keras.Sequential([
+        keras.Input(shape=(X[0].shape)),
+        keras.layers.Dense(nodes),
+        keras.layers.LeakyReLU(slope), 
+        keras.layers.Dense(nodes),
+        keras.layers.LeakyReLU(slope),
+        keras.layers.Dropout(dropout),
+        keras.layers.Dense(nodes),
+        keras.layers.LeakyReLU(slope),
+        keras.layers.Dense(nodes),
+        keras.layers.LeakyReLU(slope),
+        keras.layers.Dropout(dropout),
+        keras.layers.Dense(nodes),
+        keras.layers.LeakyReLU(slope),
+        keras.layers.Dense(nodes),
+        keras.layers.LeakyReLU(slope),
+        # keras.layers.Dropout(dropout),
+        # keras.layers.Dense(nodes),
+        # keras.layers.LeakyReLU(slope),
+        # keras.layers.Dense(nodes),
+        # keras.layers.LeakyReLU(slope),
+        # keras.layers.Dense(nodes),
+        # keras.layers.LeakyReLU(slope),
+        keras.layers.Dense(len(y[0])),
+        keras.layers.LeakyReLU(slope),
+    ])
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
+        loss=keras.losses.MeanAbsoluteError(),
+        metrics=['mae', rounded_accuracy]
+    )
+    
+    return model
 
-model = keras.Sequential([
-    keras.Input(shape=(X[0].shape)),
-    keras.layers.Dense(nodes),
-    keras.layers.LeakyReLU(slope), 
-    keras.layers.Dense(nodes),
-    keras.layers.LeakyReLU(slope),
-    keras.layers.Dropout(dropout),
-    keras.layers.Dense(nodes),
-    keras.layers.LeakyReLU(slope),
-    keras.layers.Dense(nodes),
-    keras.layers.LeakyReLU(slope),
-    keras.layers.Dropout(dropout),
-    keras.layers.Dense(nodes),
-    keras.layers.LeakyReLU(slope),
-    keras.layers.Dense(nodes),
-    keras.layers.LeakyReLU(slope),
-    # keras.layers.Dropout(dropout),
-    # keras.layers.Dense(nodes),
-    # keras.layers.LeakyReLU(slope),
-    # keras.layers.Dense(nodes),
-    # keras.layers.LeakyReLU(slope),
-    # keras.layers.Dense(nodes),
-    # keras.layers.LeakyReLU(slope),
-    keras.layers.Dense(len(y[0])),
-    keras.layers.LeakyReLU(slope),
-])
-
-early_stopping = keras.callbacks.EarlyStopping(
-    patience=5,
-    restore_best_weights=True,
-)
-
-reduce_lr = keras.callbacks.ReduceLROnPlateau(
-    monitor='val_loss',
-    factor=0.1,
-    patience=3,
-    min_lr=0.0001,
-)
-
-tensorboard_callback = keras.callbacks.TensorBoard(log_dir=current_directory+'/tensorboard_logs/'+datetime.now().strftime("%Y%m%d-%H%M%S"), histogram_freq=1)
-
+# Define a custom metric
 def rounded_accuracy(y_true, y_pred):
-    # Round the predictions to the nearest integer
     y_pred_rounded = tf.round(y_pred)
-    
-    # Check if the rounded predictions match the true values
     correct_predictions = tf.cast(tf.equal(y_true, y_pred_rounded), dtype=tf.float32)
-    
-    # Calculate the mean accuracy
     return tf.reduce_mean(correct_predictions)
 
+# Set up the random search tuner
+tuner = RandomSearch(
+    build_model,
+    objective='val_loss',
+    max_trials=50,
+    executions_per_trial=2,
+    directory=current_directory + '/tuner_logs',
+    project_name='hyperparameter_tuning'
+)
 
-loss = keras.losses.MeanAbsoluteError()
-optim = keras.optimizers.Adam(learning_rate=0.0015)
-metrics = ['mae', rounded_accuracy]
-
-model.compile(loss=loss, optimizer=optim, metrics=metrics)
-
+# Run the hyperparameter search
 batch_size = 64
-epochs = 1000
+tuner.search(
+    X, y,
+    epochs=15,
+    batch_size=batch_size,
+    validation_split=0.2,
+    callbacks=[
+        keras.callbacks.EarlyStopping(patience=5, restore_best_weights=True),
+        keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, min_lr=0.000015)
+    ]
+)
 
-history = model.fit(X, y, epochs=epochs, batch_size=batch_size, shuffle=True, verbose=1, callbacks=[early_stopping, reduce_lr, tensorboard_callback], validation_split=0.2)
+# Get the best model and hyperparameters
+best_model = tuner.get_best_models(1)[0]
+best_hyperparameters = tuner.get_best_hyperparameters(1)[0]
 
-model.evaluate(X, y, batch_size=batch_size, verbose=1)
+# Save the best model
+best_model.save(current_directory + '/best_model.keras')
 
-model.save(current_directory+'/model.keras')
+print(f"Best hyperparameters: {best_hyperparameters.values}")
 
-# Plot loss and accuracy
-plt.figure(figsize=(12, 5))
-
-# Plot training & validation loss
-plt.subplot(1, 1, 1)
-plt.plot(history.history['loss'], label='Training Loss')
-plt.plot(history.history['val_loss'], label='Validation Loss')
-plt.title('Training and Validation Loss')
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
-plt.legend()
-
-
-plt.tight_layout()
-plt.show()
+# Evaluate the best model
+best_model.evaluate(X, y, batch_size=batch_size)
