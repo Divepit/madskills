@@ -1,9 +1,9 @@
 import logging
 
-from planning_sandbox.environment_class import Environment
-from planning_sandbox.visualizer_class import Visualizer
-from planning_sandbox.agent_class import Agent
-from planning_sandbox.goal_class import Goal
+from planning_sandbox.environment.environment_class import Environment
+from planning_sandbox.environment.visualizer_class import Visualizer
+from planning_sandbox.environment.agent_class import Agent
+from planning_sandbox.environment.goal_class import Goal
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 

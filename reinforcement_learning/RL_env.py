@@ -5,8 +5,8 @@ import logging
 
 from gymnasium.spaces import Dict, MultiDiscrete, Discrete, Box, MultiBinary
 
-from planning_sandbox.environment_class import Environment
-from planning_sandbox.visualizer_class import Visualizer
+from planning_sandbox.environment.environment_class import Environment
+from planning_sandbox.environment.visualizer_class import Visualizer
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 

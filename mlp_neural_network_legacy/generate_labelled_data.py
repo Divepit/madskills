@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import h5py
-from planning_sandbox.environment_class import Environment
+from planning_sandbox.environment.environment_class import Environment
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 

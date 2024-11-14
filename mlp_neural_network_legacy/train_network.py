@@ -91,27 +91,27 @@ X = np.array(new_X).astype(np.float32)
     
 
 
-nodes = 4096
-dropout = 0.15
-learning_rate = 0.00021
+nodes = 2560
+dropout = 0.45
+learning_rate = 0.0001
 slope = 0.3
 
 model = keras.Sequential([
     keras.Input(shape=(X[0].shape)),
     keras.layers.Dense(nodes),
-    keras.layers.LeakyReLU(slope), 
+    keras.layers.LeakyReLU(negative_slope=slope), 
     keras.layers.Dense(nodes),
-    keras.layers.LeakyReLU(slope),
+    keras.layers.LeakyReLU(negative_slope=slope),
     keras.layers.Dropout(dropout),
     keras.layers.Dense(nodes),
-    keras.layers.LeakyReLU(slope),
+    keras.layers.LeakyReLU(negative_slope=slope),
     keras.layers.Dense(nodes),
-    keras.layers.LeakyReLU(slope),
+    keras.layers.LeakyReLU(negative_slope=slope),
     keras.layers.Dropout(dropout),
     keras.layers.Dense(nodes),
-    keras.layers.LeakyReLU(slope),
+    keras.layers.LeakyReLU(negative_slope=slope),
     keras.layers.Dense(nodes),
-    keras.layers.LeakyReLU(slope),
+    keras.layers.LeakyReLU(negative_slope=slope),
     # keras.layers.Dropout(dropout),
     # keras.layers.Dense(nodes),
     # keras.layers.LeakyReLU(slope),
@@ -120,17 +120,17 @@ model = keras.Sequential([
     # keras.layers.Dense(nodes),
     # keras.layers.LeakyReLU(slope),
     keras.layers.Dense(len(y[0])),
-    keras.layers.LeakyReLU(slope),
+    keras.layers.ReLU(negative_slope=slope),
 ])
 
 early_stopping = keras.callbacks.EarlyStopping(
-    patience=5,
+    patience=15,
     restore_best_weights=True,
 )
 
 reduce_lr = keras.callbacks.ReduceLROnPlateau(
     monitor='val_loss',
-    factor=0.1,
+    factor=0.9,
     patience=3,
     min_lr=0.0001,
 )
@@ -147,17 +147,16 @@ def rounded_accuracy(y_true, y_pred):
     # Calculate the mean accuracy
     return tf.reduce_mean(correct_predictions)
 
-
 loss = keras.losses.MeanAbsoluteError()
 optim = keras.optimizers.Adam(learning_rate=0.0015)
-metrics = ['mae', rounded_accuracy]
+metrics = ['mae', 'mse', rounded_accuracy]
 
 model.compile(loss=loss, optimizer=optim, metrics=metrics)
 
 batch_size = 64
 epochs = 1000
 
-history = model.fit(X, y, epochs=epochs, batch_size=batch_size, shuffle=True, verbose=1, callbacks=[early_stopping, reduce_lr, tensorboard_callback], validation_split=0.2)
+history = model.fit(X, y, epochs=epochs, batch_size=batch_size, shuffle=True, verbose=1, callbacks=[early_stopping, tensorboard_callback], validation_split=0.2)
 
 model.evaluate(X, y, batch_size=batch_size, verbose=1)
 

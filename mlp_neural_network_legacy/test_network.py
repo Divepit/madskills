@@ -6,8 +6,8 @@ import keras
 import numpy as np
 import logging
 import matplotlib.pyplot as plt  # Added for plotting
-from planning_sandbox.environment_class import Environment
-from planning_sandbox.visualizer_class import Visualizer
+from planning_sandbox.environment.environment_class import Environment
+from planning_sandbox.environment.visualizer_class import Visualizer
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 

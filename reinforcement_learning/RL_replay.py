@@ -10,7 +10,7 @@ from stable_baselines3.common.env_checker import check_env
 from stable_baselines3 import A2C
 
 from reinforcement_learning.RL_env import ILEnv
-from planning_sandbox.visualizer_class import Visualizer
+from planning_sandbox.environment.visualizer_class import Visualizer
 
 final_num_agents = 3
 final_num_goals = 5

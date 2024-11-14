@@ -2,9 +2,8 @@
 import pygame
 import logging
 import numpy as np
-import time
 
-from planning_sandbox.environment_class import Environment
+from planning_sandbox.environment.environment_class import Environment
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm

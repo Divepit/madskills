@@ -3,7 +3,7 @@ import numpy as np
 from typing import List, Dict, Tuple
 from itertools import combinations
 
-from planning_sandbox.agent_class import Agent
+from planning_sandbox.environment.agent_class import Agent
 
 class Goal:
     def __init__(self, position, skills=None):

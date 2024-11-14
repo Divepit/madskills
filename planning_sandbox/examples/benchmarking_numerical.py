@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import logging
 
-from planning_sandbox.environment_class import Environment
-from planning_sandbox.visualizer_class import Visualizer
-from planning_sandbox.benchmark_class import Benchmark
+from planning_sandbox.environment.environment_class import Environment
+from planning_sandbox.environment.visualizer_class import Visualizer
+from planning_sandbox.environment.benchmark_class import Benchmark
 
 
 

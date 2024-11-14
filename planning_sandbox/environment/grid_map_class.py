@@ -6,8 +6,8 @@ import os
 from PIL import Image
 from skimage.transform import resize
 
-from planning_sandbox.agent_class import Agent
-from planning_sandbox.goal_class import Goal
+from planning_sandbox.environment.agent_class import Agent
+from planning_sandbox.environment.goal_class import Goal
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 

@@ -5,11 +5,11 @@ import planning_sandbox.utils as utils
 
 from itertools import permutations, product, combinations
 
-from planning_sandbox.grid_map_class import GridMap
-from planning_sandbox.agent_class import Agent
-from planning_sandbox.goal_class import Goal
-from planning_sandbox.scheduler_class import Scheduler
-from planning_sandbox.benchmark_class import Benchmark
+from planning_sandbox.environment.grid_map_class import GridMap
+from planning_sandbox.environment.agent_class import Agent
+from planning_sandbox.environment.goal_class import Goal
+from planning_sandbox.environment.scheduler_class import Scheduler
+from planning_sandbox.environment.benchmark_class import Benchmark
 
 import numpy as np
 
