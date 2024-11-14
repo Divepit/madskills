@@ -1,5 +1,5 @@
 # MADSKILLS
-## **M**ulti **A**gent **D**ecision making with **SKILLS**
+### **M**ulti **A**gent **D**ecision making with **SKILLS**
 
 ## Overview
 
