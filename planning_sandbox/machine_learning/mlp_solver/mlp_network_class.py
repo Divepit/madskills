@@ -1,5 +1,5 @@
 import keras
-from utils import _rounded_accuracy
+from planning_sandbox.machine_learning.mlp_solver.utils import _rounded_accuracy
 
 
 class MlpNetwork():

@@ -4,8 +4,8 @@ import numpy as np
 import keras
 
 from planning_sandbox.machine_learning.mlp_solver.utils import downscale_data
-from autoencoder_class import Autoencoder
-from mlp_network_class import MlpNetwork
+from planning_sandbox.machine_learning.mlp_solver.autoencoder_class import Autoencoder
+from planning_sandbox.machine_learning.mlp_solver.mlp_network_class import MlpNetwork
 from keras_tuner import RandomSearch
 from planning_sandbox.environment.environment_class import Environment
 

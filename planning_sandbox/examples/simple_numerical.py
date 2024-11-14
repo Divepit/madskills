@@ -2,15 +2,13 @@ import logging
 
 from planning_sandbox.environment.environment_class import Environment
 from planning_sandbox.environment.visualizer_class import Visualizer
-from planning_sandbox.environment.agent_class import Agent
-from planning_sandbox.environment.goal_class import Goal
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 while True:
-    num_agents = 1
-    num_goals = 1
-    num_skills = 1
+    num_agents = 3
+    num_goals = 4
+    num_skills = 2
     size = 64
     visualisation_speed = 50 # Max 200
     solve_type = 'optimal' # 'optimal' or 'fast'

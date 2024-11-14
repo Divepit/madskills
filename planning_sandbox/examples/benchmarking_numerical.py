@@ -8,8 +8,6 @@ from planning_sandbox.environment.environment_class import Environment
 from planning_sandbox.environment.visualizer_class import Visualizer
 from planning_sandbox.environment.benchmark_class import Benchmark
 
-
-
 from copy import deepcopy
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -165,12 +163,15 @@ def main():
     num_skills: int = 2
     velocity = 200 #m/s (max 200)
     speed = velocity*1/5
+    random_map = True
+    assume_lander = False
 
-    solve_types = ['fast','optimal']
+
+    solve_types = ['fast','fast','optimal','optimal']
     
     
     logging.info("Setting up environment...")
-    env = Environment(size=size, num_agents=num_agents, num_goals=num_goals, num_skills=num_skills, use_geo_data=True)
+    env = Environment(size=size, num_agents=num_agents, num_goals=num_goals, num_skills=num_skills, use_geo_data=True, random_map=True, assume_lander=False)
 
     run_benchmarks_on_environments(env,solve_types, iterations, num_agents, num_goals, num_skills, size, speed, visualize)
 

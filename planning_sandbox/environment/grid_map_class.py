@@ -11,7 +11,7 @@ from planning_sandbox.environment.goal_class import Goal
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-TIF = dir_path+'/maps/shoemaker_ele_5mpp.tif'
+TIF = '/Users/marco/Programming/PlanningEnvironmentLibrary/planning_sandbox/maps/shoemaker_ele_5mpp.tif'
 MPP = 5
 WINDOW_SIZE = 4000
 X_OFFSET = 0
