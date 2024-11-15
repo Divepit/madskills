@@ -13,4 +13,4 @@ RUN pip3 install -e .
 
 COPY . /app
 
-CMD ["python3", "app/madskills/machine_learning/mlp_solver/examples/generate_dataset.py"]
+CMD ["python3", "/app/madskills/machine_learning/mlp_solver/examples/generate_dataset.py"]
