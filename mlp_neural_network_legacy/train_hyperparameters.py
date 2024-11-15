@@ -169,7 +169,5 @@ best_hyperparameters = tuner.get_best_hyperparameters(1)[0]
 # Save the best model
 best_model.save(current_directory + '/best_model.keras')
 
-print(f"Best hyperparameters: {best_hyperparameters.values}")
-
 # Evaluate the best model
 best_model.evaluate(X, y, batch_size=batch_size)

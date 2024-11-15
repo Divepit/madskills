@@ -14,3 +14,4 @@ saved_models
 *.npy_backup
 *.pth
 *.keras
+*.tif

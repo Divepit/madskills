@@ -1,5 +1,5 @@
 import keras
-from madskills.machine_learning.mlp_solver.utils import _rounded_accuracy
+from madskills.machine_learning.mlp_solver.utils import rounded_accuracy
 
 
 class MlpNetwork():
@@ -15,12 +15,18 @@ class MlpNetwork():
 
         if loss is None:
             self.loss = keras.losses.MeanAbsoluteError()
+        else:
+            self.loss = loss
         if optimizer is None:
             self.optim = keras.optimizers.Adam(learning_rate=self.learning_rate)
+        else:
+            self.optim = optimizer
         if metrics is None:
-            self.metrics = ['mae', 'mse', _rounded_accuracy]
+            self.metrics = ['mae', 'mse', rounded_accuracy]
+        else:
+            self.metrics = metrics
         
-        self.initialize_model()
+        # self.initialize_model()
 
     def initialize_model(self):
         self.model = keras.Sequential([

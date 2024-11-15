@@ -4,10 +4,9 @@ import numpy as np
 import keras
 
 from madskills.machine_learning.mlp_solver.utils import downscale_data
-from madskills.machine_learning.mlp_solver.autoencoder_class import Autoencoder
+from madskills.machine_learning.map_autoencoder.autoencoder_class import Autoencoder
 from madskills.machine_learning.mlp_solver.mlp_network_class import MlpNetwork
-from keras_tuner import RandomSearch
-from madskills.environment.environment_class import Environment
+from keras_tuner import RandomSearch, Objective
 
 
 class MlpTrainer:
@@ -66,8 +65,6 @@ class MlpTrainer:
             if self.autoencoder_path is not None:
                 self.import_autoencoder(self.autoencoder_path)
 
-            self._initialize_neural_net()
-
             self.model_save_path = model_save_path
             self.callbacks = []
 
@@ -103,7 +100,8 @@ class MlpTrainer:
         with h5py.File(dataset_path, 'r') as h5f:
             self.X = h5f['X'][:]
             self.y = h5f['y'][:]
-            self.maps = h5f['map'][:]
+            if self.encode_maps_in_X:
+                self.maps = h5f['map'][:]
 
     def _initialize_neural_net(
             self,
@@ -134,6 +132,7 @@ class MlpTrainer:
             loss=self.mlp_loss, 
             optimizer=self.mlp_optimizer,
             metrics=self.mlp_metrics)
+        self.net.initialize_model()
         self.model = self.net.model
         return self.model
             
@@ -157,8 +156,9 @@ class MlpTrainer:
             new_X.append(np.concatenate((self.X[i], encoded_map)))
         self.X = np.array(new_X).astype(np.float32)
 
-    def train(self, epochs, batch_size):
-        self.model.fit(self.X, self.y, epochs=epochs, batch_size=batch_size, shuffle=True, verbose=1, callbacks=self.callbacks, validation_split=0.2)
+    def train(self, epochs, batch_size, validation_split=0.2):
+        self._initialize_neural_net()
+        self.model.fit(self.X, self.y, epochs=epochs, batch_size=batch_size, shuffle=True, verbose=1, callbacks=self.callbacks, validation_split=validation_split)
         self.save_model(model=self.model)
 
     def _prompt_for_path(self):
@@ -194,8 +194,8 @@ class MlpTrainer:
         if path is not None:
             model.save(path)
 
-    def perform_hyperparameter_search(self, epochs, batch_size, parameter_save_path=None, model_save_path=None):
-        def _hyperparameter_search(self, hp):
+    def perform_hyperparameter_search(self, epochs, batch_size, parameter_save_path=None, model_save_path=None, validation_split=0.2, max_trials=50, executions_per_trial=2):
+        def _hyperparameter_search(hp):
             nodes = hp.Int('nodes', min_value=64, max_value=4096, step=64)
             dropout = hp.Float('dropout', min_value=0, max_value=0.5, step=0.05)
             learning_rate = hp.Float('learning_rate', min_value=0.00001, max_value=0.001, sampling='log')
@@ -207,26 +207,32 @@ class MlpTrainer:
                 learning_rate=learning_rate,
                 leaky_relu_slope=slope
             )
+        
+        
+
         tuner = RandomSearch(
             _hyperparameter_search,
-            objective='val_loss',
-            max_trials=50,
-            executions_per_trial=2,
+            objective=Objective('val_rounded_accuracy', direction="max"),
+            max_trials=max_trials,
+            executions_per_trial=executions_per_trial,
             directory=parameter_save_path,
             project_name='hyperparameter_tuning'
         )
 
         callbacks_without_tensorboard = self.callbacks.copy()
-        callbacks_without_tensorboard.remove(self.tensorboard_callback)
+        try:
+            callbacks_without_tensorboard.remove(self.tensorboard_callback)
+        except AttributeError:
+            pass
 
         tuner.search(
             self.X, 
             self.y,
             epochs=epochs,
             batch_size=batch_size,
-            validation_split=0.2,
-            callbacks=self.callbacks.remove(self.tensorboard_callback)
+            validation_split=validation_split,
+            callbacks=callbacks_without_tensorboard,
+            verbose=1
         )
 
-        self.model = tuner.get_best_models(1)[0]
-        self.save_model(model=self.model, path=model_save_path)
+        return tuner.get_best_hyperparameters(1)[0]

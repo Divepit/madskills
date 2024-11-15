@@ -2,6 +2,7 @@ from skimage.transform import resize
 import tensorflow as tf
 import numpy as np
 import keras
+import keras_tuner
 from madskills.environment.environment_class import Environment
 
 def downscale_data(data, map_size, mpp=5):
@@ -19,10 +20,21 @@ def downscale_data(data, map_size, mpp=5):
     return downscaled_data
 
 @keras.saving.register_keras_serializable()
-def _rounded_accuracy(y_true, y_pred):
+def rounded_accuracy(y_true, y_pred):
     y_pred_rounded = tf.round(y_pred)
     correct_predictions = tf.cast(tf.equal(y_true, y_pred_rounded), dtype=tf.float32)
     return tf.reduce_mean(correct_predictions)
+
+@keras.saving.register_keras_serializable()
+def penalty_mae_loss(y_true, y_pred):
+    # Standard MAE between predictions and true values
+    mae_loss = tf.reduce_mean(tf.abs(y_true - y_pred))
+    # Penalty term to push predictions towards integer values
+    fractional_penalty = tf.reduce_mean(tf.abs(y_pred - tf.round(y_pred)))
+    # Combine the two terms
+    loss = mae_loss + 0.1 * fractional_penalty  # Adjust weight (0.1) as needed
+    return loss
+
 
 def generate_mlp_input_from_env(env: Environment):
     goals_map = []

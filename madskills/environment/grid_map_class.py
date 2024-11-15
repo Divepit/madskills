@@ -9,9 +9,10 @@ from skimage.transform import resize
 from madskills.environment.agent_class import Agent
 from madskills.environment.goal_class import Goal
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
+current_directory = os.path.dirname(os.path.abspath(__file__))
 
-TIF = '/Users/marco/Programming/PlanningEnvironmentLibrary/madskills/maps/shoemaker_ele_5mpp.tif'
+
+TIF = current_directory+'/maps/shoemaker_ele_5mpp.tif'
 MPP = 5
 WINDOW_SIZE = 4000
 X_OFFSET = 0

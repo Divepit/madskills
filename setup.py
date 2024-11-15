@@ -4,11 +4,11 @@ with open('requirements.txt') as f:
     requirements = f.read().splitlines()
 
 setup(
-    name='planning-sandbox',             # Name of your project/library
+    name='madskills',             # Name of your project/library
     version='0.1',                 # Version
     packages=find_packages(),      # Automatically find packages in your project
     install_requires=requirements,
-    description='This project implements a multi-agent planning and reinforcement learning environment for task allocation and path planning. It includes a custom grid-based environment, reinforcement learning algorithms, and benchmarking tools for performance evaluation.',
+    description='This project implements a library for multi-agent planning environments. It includes a custom grid-based environment, data driven learning algorithms, and benchmarking tools for performance evaluation.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     url='https://github.com/Divepit/planning-sandbox-library',  # GitHub repo or homepage

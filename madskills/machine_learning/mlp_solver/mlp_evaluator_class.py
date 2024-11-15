@@ -1,3 +1,4 @@
+import os
 import keras
 import time
 import tensorflow as tf
@@ -156,6 +157,12 @@ class MlpEvaluator():
         # ===========================
 
         import matplotlib.pyplot as plt  # Already imported at the top
+
+        #make sure save directory exists
+        if self.plots_directory is None:
+            self.plots_directory = '.'
+        if not os.path.exists(self.plots_directory):
+            os.makedirs(self.plots_directory)
 
 
         # Plot settings for better visuals in a publication
