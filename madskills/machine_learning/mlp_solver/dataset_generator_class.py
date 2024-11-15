@@ -16,6 +16,8 @@ class DatasetGenerator():
         # warn if file already exists
         if overwrite_protection and os.path.exists(self.save_path):
             input("Warning: File already exists. Press Enter to overwrite or Ctrl+C to cancel.")
+        else:
+            os.makedirs(os.path.dirname(self.save_path), exist_ok=True)
         
 
     def generate_input(self,env: Environment):

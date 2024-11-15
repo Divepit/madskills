@@ -9,7 +9,7 @@ from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import SubprocVecEnv, VecNormalize, DummyVecEnv
 
-from reinforcement_learning.RL_env import ILEnv
+from madskills.machine_learning.rl_solver.RL_env import ILEnv
 from madskills.environment.environment_class import Environment
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
