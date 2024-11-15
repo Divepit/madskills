@@ -1,0 +1,9 @@
+version: "3.8"
+
+services:
+  madskills:
+    image: madskills
+    volumes:
+      - ./mlp_neural_network/datasets:/app/mlp_neural_network/datasets
+    environment:
+      - PYTHONUNBUFFERED=1
